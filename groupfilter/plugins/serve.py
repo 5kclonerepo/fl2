@@ -11,29 +11,30 @@ from pyrogram.types import (
 from pyrogram.enums import ParseMode, ChatMemberStatus
 from pyrogram.errors import UserNotParticipant
 from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified
-from mfinder.db.files_sql import (
+from groupfilter.db.files_sql import (
     get_filter_results,
     get_file_details,
     get_precise_filter_results,
 )
-from mfinder.db.settings_sql import (
+from groupfilter.db.settings_sql import (
     get_search_settings,
     get_admin_settings,
     get_link,
     get_channel,
 )
-from mfinder.db.ban_sql import is_banned
-from mfinder.db.filters_sql import is_filter
-from mfinder import LOGGER
+from groupfilter.db.ban_sql import is_banned
+from groupfilter.db.filters_sql import is_filter
+from groupfilter import LOGGER
 
 
 @Client.on_message(
-    ~filters.regex(r"^\/") & filters.text & filters.private & filters.incoming
+    ~filters.regex(r"^\/") & filters.text & filters.group & filters.incoming
 )
 async def filter_(bot, message):
     user_id = message.from_user.id
+    chat_id = message.chat.id
 
-    if re.findall("((^\/|^,|^!|^\.|^[\U0001F600-\U000E007F]).*)", message.text):
+    if re.findall(r"((^\/|^,|^!|^\.|^[\U0001F600-\U000E007F]).*)", message.text):
         return
 
     if await is_banned(user_id):
@@ -84,7 +85,7 @@ async def filter_(bot, message):
         page_no = 1
         me = bot.me
         username = me.username
-        result, btn = await get_result(search, page_no, user_id, username)
+        result, btn = await get_result(search, page_no, user_id, username, chat_id)
 
         if result:
             if btn:
@@ -110,13 +111,18 @@ async def filter_(bot, message):
 @Client.on_callback_query(filters.regex(r"^(nxt_pg|prev_pg) \d+ \d+ .+$"))
 async def pages(bot, query):
     user_id = query.from_user.id
+    chat_id = query.message.chat.id
     org_user_id, page_no, search = query.data.split(maxsplit=3)[1:]
     org_user_id = int(org_user_id)
     page_no = int(page_no)
     me = bot.me
     username = me.username
 
-    result, btn = await get_result(search, page_no, user_id, username)
+    if org_user_id != user_id:
+        await query.answer(text="Not your button")
+        return
+
+    result, btn = await get_result(search, page_no, user_id, username, chat_id)
 
     if result:
         try:
@@ -140,8 +146,8 @@ async def pages(bot, query):
         )
 
 
-async def get_result(search, page_no, user_id, username):
-    search_settings = await get_search_settings(user_id)
+async def get_result(search, page_no, user_id, username, chat_id):
+    search_settings = await get_search_settings(chat_id)
     if search_settings:
         if search_settings.precise_mode:
             files, count = await get_precise_filter_results(query=search, page=page_no)
@@ -169,12 +175,20 @@ async def get_result(search, page_no, user_id, username):
     else:
         link_mode = "OFF"
 
-    if button_mode == "ON" and link_mode == "OFF":
-        search_md = "Button"
-    elif button_mode == "OFF" and link_mode == "ON":
+    if search_settings:
+        if search_settings.list_mode:
+            list_mode = "ON"
+        else:
+            list_mode = "OFF"
+    else:
+        list_mode = "OFF"
+
+    if list_mode == "ON" and link_mode == "OFF":
+        search_md = "List Button"
+    elif list_mode == "OFF" and link_mode == "ON":
         search_md = "HyperLink"
     else:
-        search_md = "List Button"
+        search_md = "Button"
 
     if files:
         btn = []
@@ -182,23 +196,16 @@ async def get_result(search, page_no, user_id, username):
         crnt_pg = index // 10 + 1
         tot_pg = (count + 10 - 1) // 10
         btn_count = 0
-        result = f"**Search Query:** `{search}`\n**Total Results:** `{count}`\n**Page:** `{crnt_pg}/{tot_pg}`\n**Precise Search: **`{precise_search}`\n**Result Mode:** `{search_md}`\n"
+        result = f"**Search Query:** `{search}`\n**Total Results:** `{count}`\n**Page:** `{crnt_pg}/{tot_pg}`\n"
         page = page_no
         for file in files:
-            if button_mode == "ON":
-                file_id = file.file_id
-                filename = f"[{get_size(file.file_size)}]{file.file_name}"
-                btn_kb = InlineKeyboardButton(
-                    text=f"{filename}", callback_data=f"file {file_id}"
-                )
-                btn.append([btn_kb])
-            elif link_mode == "ON":
+            if link_mode == "ON":
                 index += 1
                 btn_count += 1
                 file_id = file.file_id
-                filename = f"**{index}.** [{file.file_name}](https://t.me/{username}/?start={file_id}) - `[{get_size(file.file_size)}]`"
+                filename = f"**{index}.** [{file.file_name}](https://t.me/{username}/?start={file_id}_{user_id}) -\n`[{get_size(file.file_size)}]`"
                 result += "\n" + filename
-            else:
+            elif list_mode == "ON":
                 index += 1
                 btn_count += 1
                 file_id = file.file_id
@@ -208,7 +215,7 @@ async def get_result(search, page_no, user_id, username):
                 result += "\n" + filename
 
                 btn_kb = InlineKeyboardButton(
-                    text=f"{index}", callback_data=f"file {file_id}"
+                    text=f"{index}", callback_data=f"file#{file_id}#{user_id}"
                 )
 
                 if btn_count == 1 or btn_count == 6:
@@ -217,6 +224,13 @@ async def get_result(search, page_no, user_id, username):
                     btn[0].append(btn_kb)
                 else:
                     btn[1].append(btn_kb)
+            else:
+                file_id = file.file_id
+                filename = f"[{get_size(file.file_size)}] {file.file_name}"
+                btn_kb = InlineKeyboardButton(
+                    text=f"{filename}", callback_data=f"file#{file_id}#{user_id}"
+                )
+                btn.append([btn_kb])
 
         nxt_kb = InlineKeyboardButton(
             text="Next >>",
@@ -238,52 +252,54 @@ async def get_result(search, page_no, user_id, username):
         if kb:
             btn.append(kb)
 
-        if button_mode and link_mode == "OFF":
-            result = (
-                result
-                + "\n\n"
-                + "🔻 __Tap on below corresponding file number to download.__ 🔻"
-            )
+        if list_mode == "ON":
+            result += "\n🔻__Tap on the corresponding file number button and then start to download.__🔻"
         elif link_mode == "ON":
-            result = result + "\n\n" + " __Tap on file name & then start to download.__"
+            result += "\n\n__Tap on the file name and then start to download.__"
+        else:
+            result += "\n🔻__Tap on the file button and then start to download.__🔻"
 
         return result, btn
 
     return None, None
 
 
-@Client.on_callback_query(filters.regex(r"^file (.+)$"))
+@Client.on_callback_query(filters.regex(r"^file#(.+)#(\d+)$"))
 async def get_files(bot, query):
     user_id = query.from_user.id
     if isinstance(query, CallbackQuery):
-        file_id = query.data.split()[1]
-        await query.answer("Sending file...", cache_time=60)
-        cbq = True
+        org_user_id = query.data.split("#")[2]
+        if int(org_user_id) != int(user_id):
+            await query.answer(text="Not your button")
+            return
+        file_id = query.data.split("#")[1]
+        b_username = bot.me.username
+        await query.answer(
+            url=f"https://t.me/{b_username}?start={file_id}_{user_id}",
+        )
+        return
     elif isinstance(query, Message):
-        file_id = query.text.split()[1]
-        cbq = False
-    filedetails = await get_file_details(file_id)
-    admin_settings = await get_admin_settings()
-    for files in filedetails:
-        f_caption = files.caption
-        if admin_settings.custom_caption:
-            f_caption = admin_settings.custom_caption
-        elif f_caption is None:
-            f_caption = f"{files.file_name}"
+        file_query = query.text.split()[1]
+        fid_sp = file_query.split("_")
+        file_id = "_".join(fid_sp[:-1])
+        org_user_id = file_query.split("_")[-1]
+        if int(org_user_id) != int(user_id):
+            await query.reply_text(text="Not your button")
+            return
+        filedetails = await get_file_details(file_id)
+        admin_settings = await get_admin_settings()
+        for files in filedetails:
+            f_caption = files.caption
+            if admin_settings.custom_caption:
+                f_caption = admin_settings.custom_caption
+            elif f_caption is None:
+                f_caption = f"{files.file_name}"
 
-        f_caption = "`" + f_caption + "`"
+            f_caption = "`" + f_caption + "`"
 
-        if admin_settings.caption_uname:
-            f_caption = f_caption + "\n" + admin_settings.caption_uname
+            if admin_settings.caption_uname:
+                f_caption = f_caption + "\n" + admin_settings.caption_uname
 
-        if cbq:
-            msg = await query.message.reply_cached_media(
-                file_id=file_id,
-                caption=f_caption,
-                parse_mode=ParseMode.MARKDOWN,
-                quote=True,
-            )
-        else:
             msg = await query.reply_cached_media(
                 file_id=file_id,
                 caption=f_caption,
@@ -291,19 +307,21 @@ async def get_files(bot, query):
                 quote=True,
             )
 
-        if admin_settings.auto_delete:
-            delay_dur = admin_settings.auto_delete
-            delay = delay_dur / 60 if delay_dur > 60 else delay_dur
-            delay = round(delay, 2)
-            minsec = str(delay) + " mins" if delay_dur > 60 else str(delay) + " secs"
-            disc = await bot.send_message(
-                user_id,
-                f"Please save the file to your saved messages, it will be deleted in {minsec}",
-            )
-            await asyncio.sleep(delay_dur)
-            await disc.delete()
-            await msg.delete()
-            await bot.send_message(user_id, "File has been deleted")
+            if admin_settings.auto_delete:
+                delay_dur = admin_settings.auto_delete
+                delay = delay_dur / 60 if delay_dur > 60 else delay_dur
+                delay = round(delay, 2)
+                minsec = (
+                    str(delay) + " mins" if delay_dur > 60 else str(delay) + " secs"
+                )
+                disc = await bot.send_message(
+                    user_id,
+                    f"Please save the file to your saved messages, it will be deleted in {minsec}",
+                )
+                await asyncio.sleep(delay_dur)
+                await disc.delete()
+                await msg.delete()
+                await bot.send_message(user_id, "File has been deleted")
 
 
 def get_size(size):

@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm.exc import NoResultFound
-from mfinder import DB_URL, LOGGER
+from groupfilter import DB_URL, LOGGER
 
 
 BASE = declarative_base()
@@ -33,14 +33,14 @@ class AdminSettings(BASE):
 
 class Settings(BASE):
     __tablename__ = "settings"
-    user_id = Column(BigInteger, primary_key=True)
+    group_id = Column(BigInteger, primary_key=True)
     precise_mode = Column(Boolean)
     button_mode = Column(Boolean)
     link_mode = Column(Boolean)
     list_mode = Column(Boolean)
 
-    def __init__(self, user_id, precise_mode, button_mode, link_mode, list_mode):
-        self.user_id = user_id
+    def __init__(self, group_id, precise_mode, button_mode, link_mode, list_mode):
+        self.group_id = group_id
         self.precise_mode = precise_mode
         self.button_mode = button_mode
         self.link_mode = link_mode
@@ -58,20 +58,22 @@ SESSION = start()
 INSERTION_LOCK = threading.RLock()
 
 
-async def get_search_settings(user_id):
+async def get_search_settings(group_id):
     try:
         with INSERTION_LOCK:
-            settings = SESSION.query(Settings).filter_by(user_id=user_id).first()
+            settings = SESSION.query(Settings).filter_by(group_id=group_id).first()
             return settings
     except Exception as e:
         LOGGER.warning("Error getting search settings: %s ", str(e))
         return None
 
 
-async def change_search_settings(user_id, precise_mode=None, button_mode=None, link_mode=None, list_mode=None):
+async def change_search_settings(
+    group_id, precise_mode=None, button_mode=True, link_mode=None, list_mode=None
+):
     try:
         with INSERTION_LOCK:
-            settings = SESSION.query(Settings).filter_by(user_id=user_id).first()
+            settings = SESSION.query(Settings).filter_by(group_id=group_id).first()
             if settings:
                 if precise_mode is not None:
                     settings.precise_mode = precise_mode
@@ -83,7 +85,11 @@ async def change_search_settings(user_id, precise_mode=None, button_mode=None, l
                     settings.list_mode = list_mode
             else:
                 new_settings = Settings(
-                    user_id=user_id, precise_mode=precise_mode, button_mode=button_mode, link_mode=link_mode, list_mode=list_mode
+                    group_id=group_id,
+                    precise_mode=precise_mode,
+                    button_mode=button_mode,
+                    link_mode=link_mode,
+                    list_mode=list_mode,
                 )
                 SESSION.add(new_settings)
             SESSION.commit()
@@ -203,6 +209,7 @@ async def get_channel():
     finally:
         SESSION.close()
 
+
 async def get_link():
     try:
         link = SESSION.query(AdminSettings.channel_link).first()
@@ -213,6 +220,7 @@ async def get_link():
         return False
     finally:
         SESSION.close()
+
 
 async def set_username(username):
     try:
@@ -229,4 +237,3 @@ async def set_username(username):
 
     except Exception as e:
         LOGGER.warning("Error adding username: %s ", str(e))
-        

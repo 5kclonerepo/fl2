@@ -1,16 +1,15 @@
 import asyncio
 from pyrogram.errors import FloodWait
 from pyrogram import enums
-from mfinder import LOGGER
-from mfinder.db.broadcast_sql import query_msg, del_user
-
+from groupfilter import LOGGER
+from groupfilter.db.broadcast_sql import query_msg, del_user
 
 
 async def users_info(bot):
     users = 0
     blocked = 0
-    identity = await query_msg()
-    for user in identity:
+    user_list = await query_msg()
+    for user in user_list:
         user_id = int(user[0])
         name = bool()
         try:

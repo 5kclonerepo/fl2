@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
-from mfinder import DB_CHANNELS, LOGGER
-from mfinder.db.files_sql import save_file
-from mfinder.utils.helpers import edit_caption
+from groupfilter import DB_CHANNELS, LOGGER
+from groupfilter.db.files_sql import save_file
+from groupfilter.utils.helpers import edit_caption
 
 media_filter = filters.document | filters.video | filters.audio
 

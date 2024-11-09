@@ -4,15 +4,13 @@ import datetime
 from pyrogram.types import Message
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
-from mfinder import LOGGER
-from mfinder.db.db_support import users_info
-from mfinder.db.broadcast_sql import query_msg
-from mfinder import ADMINS, OWNER_ID
+from groupfilter import LOGGER
+from groupfilter.db.db_support import users_info
+from groupfilter.db.broadcast_sql import query_msg
+from groupfilter import ADMINS, OWNER_ID
 
 
-@Client.on_message(
-    filters.private & filters.command("stats") & filters.user(ADMINS)
-)
+@Client.on_message(filters.private & filters.command("stats") & filters.user(ADMINS))
 async def get_subscribers_count(bot: Client, message: Message):
     wait_msg = "__Calculating, please wait...__"
     msg = await message.reply_text(wait_msg)

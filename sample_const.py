@@ -3,20 +3,37 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-#use the same format for name & user_id placeholders
-START_MSG = """
-Hi **[{}](tg://user?id={})**, I am a media finder bot which finds media from my database channel. Just send query to find the media.
-Send /help for more.
-"""
+START_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("🆘 Help", callback_data="help_cb"),
+            InlineKeyboardButton(
+                "👨‍💻 Source Code", url="https://github.com/EL-Coders/groupfilter"
+            ),
+        ]
+    ]
+)
+
+HELP_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("🔙 Back", callback_data="back_m"),
+        ],
+    ]
+)
+
+
+START_MSG = "Hi **[{}](tg://user?id={})**, I am a an autofilter bot which finds & shares media from my database."
+
 
 HELP_MSG = """
 **You can find the bot commands here.**
-**User Commands:-**
+**Group Commands:-**
 /help - __Show this help message__
 /settings - __Toggle settings of Precise Mode and Button Mode__
 `Precise Mode:` 
 - __If Enabled, bot will match the word & return results with only the exact match__
-- __If Disabled, bot will match the word & return all the results containing the word__    
+- __If Disabled, bot will match the word & return all the results containing the word__ 
 `Result Mode:` 
 - __If Button, bot will return results in button format__
 - __If List, bot will return results in list format__
@@ -44,23 +61,3 @@ __You can just forward the message from database channel for starting indexing, 
 /checklink - __Check invite link for force subscribe channel__
 /total - __Get count of total files in DB__
 """
-
-
-START_KB = InlineKeyboardMarkup(
-    [
-        [
-            InlineKeyboardButton("🆘 Help", callback_data="help_cb"),
-            InlineKeyboardButton(
-                "👨‍💻 Source Code", url="https://github.com/EL-Coders/mediafinder"
-            ),
-        ]
-    ]
-)
-
-HELP_KB = InlineKeyboardMarkup(
-    [
-        [
-            InlineKeyboardButton("🔙 Back", callback_data="back_m"),
-        ],
-    ]
-)

@@ -6,7 +6,7 @@ START_KB = InlineKeyboardMarkup(
         [
             InlineKeyboardButton("🆘 Help", callback_data="help_cb"),
             InlineKeyboardButton(
-                "👨‍💻 Source Code", url="https://github.com/EL-Coders/mediafinder"
+                "👨‍💻 Source Code", url="https://github.com/EL-Coders/groupfilter"
             ),
         ]
     ]
@@ -21,12 +21,12 @@ HELP_KB = InlineKeyboardMarkup(
 )
 
 
-STARTMSG = "Hi **[{}](tg://user?id={})**, I am a media finder bot which finds media from my database channel. Just send query to find the media.\nSend /help for more or you can toggle your settings by sending /settings."
+STARTMSG = "Hi **[{}](tg://user?id={})**, I am a an autofilter bot which finds & shares media from my database."
 
 
 HELPMSG = """
 **You can find the bot commands here.**
-**User Commands:-**
+**Group Commands:-**
 /help - __Show this help message__
 /settings - __Toggle settings of Precise Mode and Button Mode__
 `Precise Mode:` 

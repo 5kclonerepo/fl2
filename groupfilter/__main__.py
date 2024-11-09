@@ -1,15 +1,15 @@
 import uvloop
 from pyrogram import Client, idle, __version__
 from pyrogram.raw.all import layer
-from mfinder import APP_ID, API_HASH, BOT_TOKEN
+from groupfilter import APP_ID, API_HASH, BOT_TOKEN
 
 uvloop.install()
 
 
 async def main():
-    plugins = dict(root="mfinder/plugins")
+    plugins = dict(root="groupfilter/plugins")
     app = Client(
-        name="mfinder",
+        name="groupfilter",
         api_id=APP_ID,
         api_hash=API_HASH,
         bot_token=BOT_TOKEN,
@@ -22,5 +22,6 @@ async def main():
         )
         await idle()
         print(f"{me.first_name} - @{me.username} - Stopped !!!")
+
 
 uvloop.run(main())

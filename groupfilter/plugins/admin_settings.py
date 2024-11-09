@@ -1,6 +1,6 @@
 import shlex
 from pyrogram import Client, filters
-from mfinder.db.settings_sql import (
+from groupfilter.db.settings_sql import (
     get_admin_settings,
     set_repair_mode,
     set_auto_delete,
@@ -10,10 +10,10 @@ from mfinder.db.settings_sql import (
     get_link,
     set_username,
 )
-from mfinder.db.ban_sql import is_banned, ban_user, unban_user
-from mfinder.db.filters_sql import add_filter, rem_filter, list_filters
-from mfinder.db.files_sql import count_files
-from mfinder import ADMINS, DB_CHANNELS
+from groupfilter.db.ban_sql import is_banned, ban_user, unban_user
+from groupfilter.db.filters_sql import add_filter, rem_filter, list_filters
+from groupfilter.db.files_sql import count_files
+from groupfilter import ADMINS, DB_CHANNELS
 
 
 @Client.on_message(filters.command(["autodelete"]) & filters.user(ADMINS))
@@ -80,7 +80,7 @@ async def custom_caption_(bot, update):
         return
 
 
-@Client.on_message(filters.command(["adminsettings"]))
+@Client.on_message(filters.command(["adminsettings"]) & filters.user(ADMINS))
 async def admin_settings_(bot, update):
     user_id = update.from_user.id
     admin_settings = await get_admin_settings()

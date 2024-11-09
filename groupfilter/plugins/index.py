@@ -2,9 +2,9 @@ import asyncio
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from mfinder import ADMINS, LOGGER
-from mfinder.db.files_sql import save_file, delete_file
-from mfinder.utils.helpers import edit_caption
+from groupfilter import ADMINS, LOGGER
+from groupfilter.db.files_sql import save_file, delete_file
+from groupfilter.utils.helpers import edit_caption
 
 
 lock = asyncio.Lock()
@@ -17,7 +17,6 @@ async def index_files(bot, message):
     if lock.locked():
         await message.reply("Wait until previous process complete.")
     else:
-
         try:
             last_msg_id = message.forward_from_message_id
             if message.forward_from_chat.username:
@@ -83,6 +82,7 @@ async def index(bot, query):
                         total_files += 1
                 except Exception as e:
                     LOGGER.warning("Error occurred while saving file: %s", str(e))
+                await asyncio.sleep(0.2)
 
                 current += 1
                 counter += 1

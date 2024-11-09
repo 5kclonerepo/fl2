@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.pool import StaticPool
-from mfinder import DB_URL
+from groupfilter import DB_URL
 
 
 BASE = declarative_base()
@@ -15,10 +15,8 @@ class BanList(BASE):
     __tablename__ = "banlist"
     user_id = Column(BigInteger, primary_key=True)
 
-
     def __init__(self, user_id):
         self.user_id = user_id
-
 
 
 def start() -> scoped_session:

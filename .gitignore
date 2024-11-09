@@ -159,10 +159,11 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 logs.txt
-mfinder/mfinder.session
-mfinder/mfinder.session-journal
-mfinder.session
-mfinder.session-shm
-mfinder.session-wal
-mfinder.session-journal
+*.session
+groupfilter/groupfilter.session
+groupfilter/groupfilter.session-journal
+groupfilter.session
+groupfilter.session-shm
+groupfilter.session-wal
+groupfilter.session-journal
 .vscode/settings.json

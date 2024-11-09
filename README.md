@@ -1,14 +1,14 @@
-# Telegram Media Finder
+# Telegram Auto Filter Bot
 
-A telegram bot to find files saved in its database.
+A telegram bot to find files saved in its database and to serve in them groups.
 
-Re-written version of [Media Search bot](https://github.com/Mahesh0253/Media-Search-bot)
+Re-written version of [Media Search bot](https://github.com/Mahesh0253/Media-Search-bot) which is tweaked to work in groups.
 
 ## Features
 
 - Precise search option for more accurate results.
 - Auto index files from given database channel/group.
-- User settings for customization.
+- Group settings for customization.
 - Admin settings within the bot.
 - Show search results as Button or List or List-Hyperlink.
 - Manual index of files from channels.
@@ -69,10 +69,10 @@ Run Locally / On VPS
 
 ```bash
 # Clone this repo
-git clone https://github.com/EL-Coders/mediafinder
+git clone https://github.com/EL-Coders/groupfilter
 
 # cd folder
-cd mediafinder
+cd groupfilter
 
 # Create virtual environment
 python3 -m venv venv
@@ -88,7 +88,7 @@ pip3 install -r requirements.txt
 cp .env.sample .env
 
 # Run bot
-python3 -m mfinder
+python3 -m groupfilter
 ```
 
 If you want to modify start & help messages, copy [`sample_const.py`](sample_const.py) to `const.py` and do the changes.
@@ -113,4 +113,4 @@ If you have any feedback or to report any issues, please reach out to us at [EL 
 
 Contributions are always welcome, but please test your code before pushing!
 
-Also, kindly adhere to this project's `code of conduct`.
+Also, kindly adhere to this project\'s `code of conduct`.
