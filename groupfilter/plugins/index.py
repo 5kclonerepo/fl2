@@ -52,13 +52,16 @@ async def index(bot, query):
     chat_id, last_msg_id = map(int, query.data.split()[1:])
 
     await query.message.delete()
-    msg = await bot.send_message(user_id, "Processing Index...⏳")
+    msg = await bot.send_message(
+        user_id, "Processing Index...⏳\nCount will update after every 200 files"
+    )
     total_files = 0
     async with lock:
         try:
             total = last_msg_id + 1
             current = 2
             counter = 0
+            saved = 0
             while True:
                 try:
                     message = await bot.get_messages(
@@ -78,25 +81,29 @@ async def index(bot, query):
                         file_name = edit_caption(file_name)
                         media.file_type = file_type
                         media.caption = file_name
-                        await save_file(media)
+                        save = await save_file(media)
+                        if save:
+                            saved += 1
                         total_files += 1
                 except Exception as e:
                     LOGGER.warning("Error occurred while saving file: %s", str(e))
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.1)
 
                 current += 1
                 counter += 1
-                if counter == 50:
+                if counter == 200:
                     try:
                         await msg.edit(
-                            f"Total messages fetched: {current}\nTotal messages saved: {total_files}"
+                            f"Total messages fetched: {current}\nTotal messages processed: {total_files}"
                         )
+                        LOGGER.info("Total messages processed: %s", total_files)
                     except FloodWait as e:
                         LOGGER.warning(
-                            "FloodWait while indexing, sleeping for: %s", str(e.value)
+                            "FloodWait while editing count message, sleeping for: %s seconds",
+                            str(e.value),
                         )
                         await asyncio.sleep(e.value)
-                    counter -= 50
+                    counter -= 200
                 if current == total:
                     break
 
@@ -104,7 +111,8 @@ async def index(bot, query):
             LOGGER.exception(e)
             await msg.edit(f"Error: {e}")
         else:
-            await msg.edit(f"Total {total_files} Saved To DataBase!")
+            LOGGER.info("Complete: Total files saved: %s", saved)
+            await msg.edit(f"Complete: Total {saved} Files Saved To DataBase!")
 
 
 @Client.on_message(filters.command(["index"]) & filters.user(ADMINS))

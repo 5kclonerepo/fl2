@@ -7,10 +7,12 @@ from pyrogram.types import (
     Message,
     CallbackQuery,
     LinkPreviewOptions,
+    ChatJoinRequest,
+    ChatMemberUpdated
 )
-from pyrogram.enums import ParseMode, ChatMemberStatus
-from pyrogram.errors import UserNotParticipant
+from pyrogram.enums import ParseMode
 from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified
+from groupfilter.plugins.fsub import check_fsub
 from groupfilter.db.files_sql import (
     get_filter_results,
     get_file_details,
@@ -19,8 +21,6 @@ from groupfilter.db.files_sql import (
 from groupfilter.db.settings_sql import (
     get_search_settings,
     get_admin_settings,
-    get_link,
-    get_channel,
 )
 from groupfilter.db.ban_sql import is_banned
 from groupfilter.db.filters_sql import is_filter
@@ -36,36 +36,6 @@ async def filter_(bot, message):
 
     if re.findall(r"((^\/|^,|^!|^\.|^[\U0001F600-\U000E007F]).*)", message.text):
         return
-
-    if await is_banned(user_id):
-        await message.reply_text("You are banned. You can't use this bot.", quote=True)
-        return
-
-    force_sub = await get_channel()
-    if force_sub:
-        try:
-            user = await bot.get_chat_member(int(force_sub), user_id)
-            if user.status == ChatMemberStatus.BANNED:
-                await message.reply_text("Sorry, you are Banned to use me.", quote=True)
-                return
-        except UserNotParticipant:
-            link = await get_link()
-            await message.reply_text(
-                text="**Please join my Update Channel to use this Bot!**",
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("🤖 Join Channel", url=link)]]
-                ),
-                parse_mode=ParseMode.MARKDOWN,
-                quote=True,
-            )
-            return
-        except Exception as e:
-            LOGGER.warning(e)
-            await message.reply_text(
-                text="Something went wrong, please contact my support group",
-                quote=True,
-            )
-            return
 
     admin_settings = await get_admin_settings()
     if admin_settings:
@@ -89,23 +59,35 @@ async def filter_(bot, message):
 
         if result:
             if btn:
-                await message.reply_text(
+                btn_msg = await message.reply_text(
                     f"{result}",
                     reply_markup=InlineKeyboardMarkup(btn),
                     link_preview_options=LinkPreviewOptions(is_disabled=True),
                     quote=True,
                 )
             else:
-                await message.reply_text(
+                btn_msg = await message.reply_text(
                     f"{result}",
                     link_preview_options=LinkPreviewOptions(is_disabled=True),
                     quote=True,
                 )
         else:
-            await message.reply_text(
-                text="No results found.\nOr retry with the correct spelling 🤐",
-                quote=True,
-            )
+            if admin_settings.notfound_msg and admin_settings.notfound_img:
+                nf_msg = await message.reply_photo(
+                    photo=admin_settings.notfound_img,
+                    caption=admin_settings.notfound_msg,
+                    quote=True,
+                )
+            elif admin_settings.notfound_msg and not admin_settings.notfound_img:
+                nf_msg = await message.reply_text(admin_settings.notfound_msg)
+            else:
+                nf_msg = "No results found.\nOr retry with the correct spelling 🤐"
+                await message.reply_text(nf_msg)
+
+    if admin_settings.btn_del:
+        await asyncio.sleep(admin_settings.btn_del)
+        await btn_msg.delete()
+        await nf_msg.delete()
 
 
 @Client.on_callback_query(filters.regex(r"^(nxt_pg|prev_pg) \d+ \d+ .+$"))
@@ -140,10 +122,18 @@ async def pages(bot, query):
         except MessageNotModified:
             pass
     else:
-        await query.message.reply_text(
-            text="No results found.\nOr retry with the correct spelling 🤐",
-            quote=True,
-        )
+        admin_settings = await get_admin_settings()
+        if admin_settings.notfound_msg and admin_settings.notfound_img:
+            nf_msg = await query.message.reply_photo(
+                photo=admin_settings.notfound_img,
+                caption=admin_settings.notfound_msg,
+                quote=True,
+            )
+        elif admin_settings.notfound_msg and not admin_settings.notfound_img:
+            nf_msg = await query.message.reply_text(admin_settings.notfound_msg)
+        else:
+            nf_msg = "No results found.\nOr retry with the correct spelling 🤐"
+            await query.message.reply_text(nf_msg)
 
 
 async def get_result(search, page_no, user_id, username, chat_id):
@@ -203,7 +193,7 @@ async def get_result(search, page_no, user_id, username, chat_id):
                 index += 1
                 btn_count += 1
                 file_id = file.file_id
-                filename = f"**{index}.** [{file.file_name}](https://t.me/{username}/?start={file_id}_{user_id}) -\n`[{get_size(file.file_size)}]`"
+                filename = f"**{index}.** [{file.file_name}](https://t.me/{username}/?start={file_id}_{user_id}_{chat_id}) -\n`[{get_size(file.file_size)}]`"
                 result += "\n" + filename
             elif list_mode == "ON":
                 index += 1
@@ -215,7 +205,7 @@ async def get_result(search, page_no, user_id, username, chat_id):
                 result += "\n" + filename
 
                 btn_kb = InlineKeyboardButton(
-                    text=f"{index}", callback_data=f"file#{file_id}#{user_id}"
+                    text=f"{index}", callback_data=f"file#{file_id}#{user_id}#{chat_id}"
                 )
 
                 if btn_count == 1 or btn_count == 6:
@@ -228,7 +218,8 @@ async def get_result(search, page_no, user_id, username, chat_id):
                 file_id = file.file_id
                 filename = f"[{get_size(file.file_size)}] {file.file_name}"
                 btn_kb = InlineKeyboardButton(
-                    text=f"{filename}", callback_data=f"file#{file_id}#{user_id}"
+                    text=f"{filename}",
+                    callback_data=f"file#{file_id}#{user_id}#{chat_id}",
                 )
                 btn.append([btn_kb])
 
@@ -264,64 +255,143 @@ async def get_result(search, page_no, user_id, username, chat_id):
     return None, None
 
 
-@Client.on_callback_query(filters.regex(r"^file#(.+)#(\d+)$"))
+@Client.on_callback_query(filters.regex(r"^file#(.+)#(\d+)#(.+)$"))
 async def get_files(bot, query):
     user_id = query.from_user.id
     if isinstance(query, CallbackQuery):
         org_user_id = query.data.split("#")[2]
+        chat_id = query.data.split("#")[3]
         if int(org_user_id) != int(user_id):
             await query.answer(text="Not your button")
             return
         file_id = query.data.split("#")[1]
         b_username = bot.me.username
         await query.answer(
-            url=f"https://t.me/{b_username}?start={file_id}_{user_id}",
+            url=f"https://t.me/{b_username}?start={file_id}_{user_id}_{chat_id}",
         )
         return
     elif isinstance(query, Message):
         file_query = query.text.split()[1]
         fid_sp = file_query.split("_")
-        file_id = "_".join(fid_sp[:-1])
-        org_user_id = file_query.split("_")[-1]
+        file_id = "_".join(fid_sp[:-2])
+        org_user_id = file_query.split("_")[-2]
+        chat_id = file_query.split("_")[-1]
         if int(org_user_id) != int(user_id):
             await query.reply_text(text="Not your button")
             return
-        filedetails = await get_file_details(file_id)
+
+        if await is_banned(user_id):
+            await query.reply_text(
+                "You are banned. You can't use this bot.", quote=True
+            )
+            return
+
+        force_sub = None
+        request = None
         admin_settings = await get_admin_settings()
-        for files in filedetails:
-            f_caption = files.caption
-            if admin_settings.custom_caption:
-                f_caption = admin_settings.custom_caption
-            elif f_caption is None:
-                f_caption = f"{files.file_name}"
 
-            f_caption = "`" + f_caption + "`"
+        if admin_settings:
+            force_sub = admin_settings.fsub_channel
+            link = admin_settings.channel_link
+            request = admin_settings.join_req
 
-            if admin_settings.caption_uname:
-                f_caption = f_caption + "\n" + admin_settings.caption_uname
+        if force_sub:
+            user_found = await check_fsub(
+                bot, query, force_sub, link, request, user_id, file_id, admin_settings
+            )
+            if not user_found:
+                return
 
-            msg = await query.reply_cached_media(
-                file_id=file_id,
-                caption=f_caption,
-                parse_mode=ParseMode.MARKDOWN,
+        await send_file(admin_settings, bot, query, user_id, file_id)
+
+
+async def send_file(admin_settings, bot, query, user_id, file_id):
+    filedetails = await get_file_details(file_id)
+    for files in filedetails:
+        f_caption = files.caption
+        if admin_settings.custom_caption:
+            f_caption = admin_settings.custom_caption
+        elif f_caption is None:
+            f_caption = f"{files.file_name}"
+        f_caption = "`" + f_caption + "`"
+
+    if admin_settings.caption_uname:
+        f_caption = f_caption + "\n" + admin_settings.caption_uname
+
+    info = None
+    if admin_settings.info_msg and admin_settings.info_img:
+        if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
+            info = await bot.send_photo(
+                chat_id=user_id,
+                photo=admin_settings.info_img,
+                caption=admin_settings.info_msg,
+            )
+        else:
+            info = await query.reply_photo(
+                photo=admin_settings.info_img,
+                caption=admin_settings.info_msg,
                 quote=True,
             )
+    elif admin_settings.info_msg and not admin_settings.info_img:
+        if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
+            info = await bot.send_message(user_id, admin_settings.info_msg)
+        else:
+            info = await query.reply_text(admin_settings.info_msg)
 
-            if admin_settings.auto_delete:
-                delay_dur = admin_settings.auto_delete
-                delay = delay_dur / 60 if delay_dur > 60 else delay_dur
-                delay = round(delay, 2)
-                minsec = (
-                    str(delay) + " mins" if delay_dur > 60 else str(delay) + " secs"
-                )
-                disc = await bot.send_message(
-                    user_id,
-                    f"Please save the file to your saved messages, it will be deleted in {minsec}",
-                )
-                await asyncio.sleep(delay_dur)
-                await disc.delete()
-                await msg.delete()
-                await bot.send_message(user_id, "File has been deleted")
+    if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
+        msg = await bot.send_cached_media(
+            chat_id=user_id,
+            file_id=file_id,
+            caption=f_caption,
+            parse_mode=ParseMode.MARKDOWN,
+        )
+    else:
+        msg = await query.reply_cached_media(
+            file_id=file_id,
+            caption=f_caption,
+            parse_mode=ParseMode.MARKDOWN,
+            quote=True,
+        )
+
+    if admin_settings.auto_delete:
+        try:
+            delay_dur = admin_settings.auto_delete
+            delay = delay_dur / 60 if delay_dur > 60 else delay_dur
+            delay = round(delay, 2)
+            minsec = str(delay) + " mins" if delay_dur > 60 else str(delay) + " secs"
+            if admin_settings.del_msg and admin_settings.del_img:
+                if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
+                    disc = await bot.send_photo(
+                        chat_id=user_id,
+                        photo=admin_settings.del_img,
+                        caption=admin_settings.del_msg,
+                    )
+                else:
+                    disc = await msg.reply_photo(
+                        photo=admin_settings.del_img,
+                        caption=admin_settings.del_msg,
+                        quote=True,
+                    )
+            elif admin_settings.del_msg and not admin_settings.del_img:
+                del_msg = admin_settings.del_msg
+                if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
+                    disc = await bot.send_message(user_id, del_msg)
+                else:
+                    disc = await msg.reply_text(del_msg)
+            else:
+                del_msg = f"Please save the file to your saved messages, it will be deleted in {minsec}"
+                if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
+                    disc = await bot.send_message(user_id, del_msg)
+                else:
+                    disc = await msg.reply_text(del_msg)
+            await asyncio.sleep(delay_dur)
+            if info:
+                await info.delete()
+            await msg.delete()
+            await disc.delete()
+            await bot.send_message(user_id, "File has been deleted")
+        except Exception as e:
+            LOGGER.warning("Error occurred while deleting file: %s", str(e))
 
 
 def get_size(size):

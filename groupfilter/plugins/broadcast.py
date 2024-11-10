@@ -3,10 +3,10 @@ import time
 import datetime
 from pyrogram.types import Message
 from pyrogram import Client, filters
+from pyrogram.enums import ChatAction
 from pyrogram.errors import FloodWait
 from groupfilter import LOGGER
-from groupfilter.db.db_support import users_info
-from groupfilter.db.broadcast_sql import query_msg
+from groupfilter.db.broadcast_sql import query_msg, del_user
 from groupfilter import ADMINS, OWNER_ID
 
 
@@ -71,3 +71,25 @@ async def send_text(bot, message: Message):
         msg = await message.reply_text(reply_error, message.id)
         await asyncio.sleep(8)
         await msg.delete()
+
+
+async def users_info(bot):
+    users = 0
+    blocked = 0
+    user_list = await query_msg()
+    for user in user_list:
+        user_id = int(user[0])
+        name = bool()
+        try:
+            name = await bot.send_chat_action(user_id, ChatAction.TYPING)
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+        except Exception:
+            pass
+        if bool(name):
+            users += 1
+        else:
+            await del_user(user_id)
+            LOGGER.info("Deleted user id %s from broadcast list", user_id)
+            blocked += 1
+    return users, blocked

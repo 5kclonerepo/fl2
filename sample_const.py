@@ -13,7 +13,6 @@ START_KB = InlineKeyboardMarkup(
         ]
     ]
 )
-
 HELP_KB = InlineKeyboardMarkup(
     [
         [
@@ -25,12 +24,11 @@ HELP_KB = InlineKeyboardMarkup(
 
 START_MSG = "Hi **[{}](tg://user?id={})**, I am a an autofilter bot which finds & shares media from my database."
 
-
 HELP_MSG = """
 **You can find the bot commands here.**
 **Group Commands:-**
-/help - __Show this help message__
-/settings - __Toggle settings of Precise Mode and Button Mode__
+‣/help - __Show this help message__
+‣/settings - __Toggle settings of Precise Mode and Button Mode__
 `Precise Mode:` 
 - __If Enabled, bot will match the word & return results with only the exact match__
 - __If Disabled, bot will match the word & return all the results containing the word__ 
@@ -40,24 +38,33 @@ HELP_MSG = """
 - __If HyperLink, bot will return results in hyperlink format__
 
 **Admin Commands:-**
-/logs - __Get logs as a file__
-/server - __Get server stats__
-/restart - __Restart the bot__
-/stats - __Get bot user stats__
-/broadcast - __Reply to a message to send that to all bot users__
-/index - __Start indexing a database channel (bot must be admin of the channel if that is provate channel)__
+‣/logs - __Get logs as a file__
+‣/server - __Get server stats__
+‣/restart - __Restart the bot__
+‣/stats - __Get bot user stats__
+‣/broadcast - __Reply to a message to send that to all bot users__
+‣/index - __Start indexing a database channel (bot must be admin of the channel if that is provate channel)__
 __You can just forward the message from database channel for starting indexing, no need to use the /index command__
-/delete - __Reply to a file to delete it from database__
-/autodelete - __Set file auto delete time in seconds__
-/repairmode - __Enable or disable repair mode - If on, bot will not send any files__
-/customcaption - __Set custom caption for files__
-/adminsettings - __Get current admin settings__
-/ban - __Ban a user from bot__ - `/ban user_id`
-/unban - __Unban a user from bot__ - `/unban user_id`
-/addfilter - __Add a text filter__ - `/addfilter filter message` __or__ `/addfilter "filter multiple words" message` __(If a filter is there, bot will send the filter rather than file)__
-/delfilter - __Delete a text filter__ - `/delfilter filter`
-/listfilters - __List all filters currently added in the bot__
-/forcesub - __Set force subscribe channel__ - `/forcesub channel_id` __Bot must be admin of that channel (Bot will create a new invite link for that channel)__
-/checklink - __Check invite link for force subscribe channel__
-/total - __Get count of total files in DB__
+‣/delete - __Reply to a file to delete it from database__
+‣/autodelete - __Set file auto delete time in seconds__
+‣/buttondel - __Set button message in groups auto delete time in seconds__
+‣/repairmode - __Enable or disable repair mode - If on, bot will not send any files__
+‣/customcaption - __Set custom caption for files__
+‣/adminsettings - __Get current admin settings__
+‣/ban - __Ban a user from bot__ - `/ban user_id`
+‣/unban - __Unban a user from bot__ - `/unban user_id`
+‣/addfilter - __Add a text filter__ - `/addfilter filter message` __or__ `/addfilter "filter multiple words" message` __(If a filter is there, bot will send the filter rather than file)__
+‣/delfilter - __Delete a text filter__ - `/delfilter filter`
+‣/listfilters - __List all filters currently added in the bot__
+‣/forcesub - __Set force subscribe channel__ - `/forcesub channel_id/off` __or__ `/forcesub channel_id request`(for request channel) __Bot must be admin of that channel (Bot will create a new invite link for that channel)__
+‣/checklink - __Check invite link for force subscribe channel__
+‣/infomsg - __Set info message before sending file__ - `/infomsg message/off`
+‣/infopic - __Set info image before sending file__ - Reply `/infopic` to an image to set or  `/infopic off` to remove
+‣/delmsg - __Set delete message after sending file (File auto delete needs to be enabled to work)__ - `/delmsg message/off`
+‣/delpic - __Set delete image after sending file (File auto delete needs to be enabled to work)__ - Reply `/delpic` to an image to set or  `/delpic off` to remove
+‣/notfoundmsg - __Set message to send when file not found__ - `/notfoundmsg message/off`
+‣/notfoundpic - __Set image to send when file not found__ - Reply `/notfoundimg` to an image to set or  `/notfoundimg off` to remove
+‣/fsubmsg - __Set force subscribe message__ - `/fsubmsg message/off`
+‣/fsubimg - __Set force subscribe image__ - Reply `/fsubimg` to an image to set or  `/fsubimg off` to remove
+‣/total - __Get count of total files in DB__
 """
