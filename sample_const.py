@@ -43,8 +43,10 @@ HELP_MSG = """
 ‣/restart - __Restart the bot__
 ‣/stats - __Get bot user stats__
 ‣/broadcast - __Reply to a message to send that to all bot users__
-‣/index - __Start indexing a database channel (bot must be admin of the channel if that is provate channel)__
+‣/index - __Start indexing a database channel (bot must be admin of the channel if that is private channel)__
 __You can just forward the message from database channel for starting indexing, no need to use the /index command__
+/indexlink - __Start indexing a database channel using link (bot must be admin of the channel if that is private channel)__
+__`/indexlink <last message link>` or `/indexlink <start message link> <last message link>`__
 ‣/delete - __Reply to a file to delete it from database__
 ‣/autodelete - __Set file auto delete time in seconds__
 ‣/buttondel - __Set button message in groups auto delete time in seconds__

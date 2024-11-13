@@ -18,7 +18,7 @@ from pyrogram.errors.exceptions.bad_request_400 import (
     MessageNotModified,
     ButtonDataInvalid,
     QueryIdInvalid,
-    MediaEmpty
+    MediaEmpty,
 )
 from groupfilter.plugins.fsub import check_fsub
 from groupfilter.db.files_sql import (
@@ -65,7 +65,7 @@ async def filter_(bot, message, search=None):
             quote=True,
         )
         return
-    
+
     src = None
     if search:
         src = await message.reply_text(
@@ -76,7 +76,7 @@ async def filter_(bot, message, search=None):
         search = message.text
     else:
         return
-    
+
     page_no = 1
     me = bot.me
     username = me.username
@@ -341,7 +341,7 @@ async def get_files(bot, query):
 
 async def send_file(admin_settings, bot, query, user_id, file_id):
     filedetails = await get_file_details(file_id)
-    f_caption=None
+    f_caption = None
     for files in filedetails:
         f_caption = files.caption
         if admin_settings.custom_caption:
@@ -465,8 +465,8 @@ def get_size(size):
 @Client.on_message(
     filters.private & filters.command(["clearcache"]) & filters.user(ADMINS)
 )
-async def clear_cache(bot, message, mess=True):
-    redis_client.flushall()    
+async def clear_cache(bot, message=None, mess=True):
+    redis_client.flushall()
     if mess:
         LOGGER.warning("Stored cache cleared")
         await message.reply_text("Stored cache cleared", quote=True)
