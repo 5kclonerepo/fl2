@@ -107,7 +107,7 @@ async def index(bot, query):
                     counter -= 200
                 if current == total:
                     break
-                await clear_cache(bot, message)
+                await clear_cache(bot, message, mess=False)
 
         except Exception as e:
             LOGGER.exception(e)

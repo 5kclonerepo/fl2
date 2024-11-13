@@ -337,6 +337,7 @@ async def get_files(bot, query):
 
 async def send_file(admin_settings, bot, query, user_id, file_id):
     filedetails = await get_file_details(file_id)
+    f_caption=None
     for files in filedetails:
         f_caption = files.caption
         if admin_settings.custom_caption:
@@ -456,10 +457,11 @@ def get_size(size):
 @Client.on_message(
     filters.private & filters.command(["clearcache"]) & filters.user(ADMINS)
 )
-async def clear_cache(bot, message):
-    redis_client.flushall()
-    LOGGER.warning("Stored cache cleared")
-    await message.reply_text("Stored cache cleared", quote=True)
+async def clear_cache(bot, message, mess=True):
+    redis_client.flushall()    
+    if mess:
+        LOGGER.warning("Stored cache cleared")
+        await message.reply_text("Stored cache cleared", quote=True)
 
 
 async def del_message(chat_id: int, message_id: int, txt=None):

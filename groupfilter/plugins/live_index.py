@@ -24,7 +24,7 @@ async def live_index(bot, message):
             media.caption = file_name
             await save_file(media)
             await asyncio.sleep(1)
-        await clear_cache(bot, message)
+        await clear_cache(bot, message, mess=False)
     except FloodWait as e:
         LOGGER.warning("Floodwait while live index. Sleeping for %s seconds", e.value)
         await asyncio.sleep(e.value)

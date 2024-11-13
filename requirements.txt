@@ -1,4 +1,4 @@
-APScheduler
+APScheduler==3.10.4
 greenlet==3.0.3
 psutil
 psycopg2-binary==2.9.9
