@@ -1,3 +1,4 @@
+import re
 import threading
 import json
 from sqlalchemy import create_engine, func, and_
@@ -91,11 +92,13 @@ async def save_file(media):
                 file = SESSION.query(Files).filter_by(file_name=media.file_name).one()
                 LOGGER.warning("%s is already saved in the database", media.file_name)
             except NoResultFound:
+                cleaned_fn = clean_text(media.file_name) if media.file_name else ""
+                cleaned_cp = clean_text(media.caption) if media.caption else ""
                 search_vector = func.to_tsvector(
                     "english",
-                    func.coalesce(media.file_name, "")
+                    func.coalesce(cleaned_fn, "")
                     + " "
-                    + func.coalesce(media.caption, ""),
+                    + func.coalesce(cleaned_cp, ""),
                 )
                 file = Files(
                     file_name=media.file_name,
@@ -252,3 +255,6 @@ async def count_files():
     except Exception as e:
         LOGGER.warning("Error occurred while counting files: %s", str(e))
         return 0
+
+def clean_text(text):
+    return re.sub(r'[._]', '', text)

@@ -81,7 +81,7 @@ def unpack_new_file_id(new_file_id):
     return file_id, file_ref
 
 
-def edit_caption(c_caption):
+def edit_text(c_caption):
     org_caption = c_caption
 
     caption = org_caption.replace(".", " ")

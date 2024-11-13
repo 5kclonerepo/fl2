@@ -5,7 +5,7 @@ from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from groupfilter import ADMINS, LOGGER
 from groupfilter.db.files_sql import save_file, delete_file
-from groupfilter.utils.helpers import edit_caption
+from groupfilter.utils.helpers import edit_text
 from groupfilter.plugins.serve import clear_cache
 
 
@@ -146,9 +146,9 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
                     for file_type in ("document", "video", "audio"):
                         media = getattr(message, file_type, None)                      
                         if media:
-                            caption = message.caption
+                            caption = edit_text(message.caption) if message.caption else None
                             file_name = media.file_name
-                            file_name = edit_caption(file_name)
+                            file_name = edit_text(file_name)
                             media.file_type = file_type
                             media.caption = caption or file_name
                             save = await save_file(media)

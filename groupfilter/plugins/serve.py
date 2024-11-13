@@ -33,6 +33,7 @@ from groupfilter.db.settings_sql import (
 )
 from groupfilter.db.ban_sql import is_banned
 from groupfilter.db.filters_sql import is_filter
+from groupfilter.utils.helpers import edit_text
 from groupfilter import LOGGER, ADMINS
 from __main__ import app
 
@@ -74,6 +75,7 @@ async def filter_(bot, message, search=None):
         )
     elif 2 < len(message.text) < 100:
         search = message.text
+        search = edit_text(search)
     else:
         return
 
