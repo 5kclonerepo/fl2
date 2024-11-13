@@ -14,14 +14,18 @@ async def live_index(bot, message):
     try:
         for file_type in ("document", "video", "audio"):
             media = getattr(message, file_type, None)
-
+            caption = message.caption
+            
             if not media:
                 break
             file_name = media.file_name
             file_name = edit_caption(file_name)
             media.file_type = file_type
             # media.caption = message.caption if message.caption else file_name
-            media.caption = file_name
+            if caption:
+                media.caption = caption
+            else:
+                media.caption = file_name
             await save_file(media)
             await asyncio.sleep(1)
         await clear_cache(bot, message, mess=False)

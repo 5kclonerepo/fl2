@@ -78,10 +78,14 @@ async def index(bot, query):
                         media = getattr(message, file_type, None)
                         if not media:
                             break
+                        caption = message.caption
                         file_name = media.file_name
                         file_name = edit_caption(file_name)
                         media.file_type = file_type
-                        media.caption = file_name
+                        if caption:
+                            media.caption = caption
+                        else:
+                            media.caption = file_name
                         save = await save_file(media)
                         if save:
                             saved += 1
