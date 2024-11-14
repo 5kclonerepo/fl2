@@ -1,20 +1,28 @@
 import threading
-import redis
 import json
-from sqlalchemy import create_engine, or_, func, and_
+from sqlalchemy import create_engine, func, and_
 from sqlalchemy import Column, TEXT, Numeric, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.pool import StaticPool
-from groupfilter import DB_URL, LOGGER
+from groupfilter import DB_URL, LOGGER, BOT_TOKEN
 from groupfilter.utils.helpers import unpack_new_file_id
 from sqlalchemy import Index
 from sqlalchemy.dialects.postgresql import TSVECTOR
+from groupfilter.db.redis import NamespacedRedis
 
 BASE = declarative_base()
 
-redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+
+def get_redis_client(bot_token: str) -> NamespacedRedis:
+    return NamespacedRedis(
+        bot_token, host="localhost", port=6379, db=0, decode_responses=True
+    )
+
+
+token = BOT_TOKEN[-10:]
+redis_client = get_redis_client(token)
 try:
     redis_client.config_set("maxmemory", "200mb")
     redis_client.config_set("maxmemory-policy", "allkeys-lru")
