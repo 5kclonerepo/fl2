@@ -95,7 +95,7 @@ async def save_file(media):
                 cleaned_fn = clean_text(media.file_name) if media.file_name else ""
                 cleaned_cp = clean_text(media.caption) if media.caption else ""
                 search_vector = func.to_tsvector(
-                    "english",
+                    "simple",
                     func.coalesce(cleaned_fn, "")
                     + " "
                     + func.coalesce(cleaned_cp, ""),
@@ -139,7 +139,7 @@ async def get_filter_results(query, page=1, per_page=10):
         with INSERTION_LOCK:
             offset = (page - 1) * per_page
             search = query.split()
-            conditions = [Files.search_vector.match(word) for word in search]
+            conditions = [Files.search_vector.op('@@')(func.to_tsquery('simple', f"{word}:*")) for word in search]
             combined_condition = and_(*conditions)
             files_query = (
                 SESSION.query(Files)
@@ -257,4 +257,4 @@ async def count_files():
         return 0
 
 def clean_text(text):
-    return re.sub(r'[._]', '', text)
+    return re.sub(r'[._]', ' ', text)
