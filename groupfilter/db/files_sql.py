@@ -96,9 +96,7 @@ async def save_file(media):
                 cleaned_cp = clean_text(media.caption) if media.caption else ""
                 search_vector = func.to_tsvector(
                     "simple",
-                    func.coalesce(cleaned_fn, "")
-                    + " "
-                    + func.coalesce(cleaned_cp, ""),
+                    func.coalesce(cleaned_fn, "") + " " + func.coalesce(cleaned_cp, ""),
                 )
                 file = Files(
                     file_name=media.file_name,
@@ -131,16 +129,31 @@ def cache_key(query, page, per_page):
 
 
 async def get_filter_results(query, page=1, per_page=10):
+    if not query.strip():
+        return {"files": [], "total_count": 0}
+
     key = cache_key(query, page, per_page)
     cached_result = redis_client.get(key)
     if cached_result:
         return json.loads(cached_result)
+
     try:
         with INSERTION_LOCK:
             offset = (page - 1) * per_page
             search = query.split()
-            conditions = [Files.search_vector.op('@@')(func.to_tsquery('simple', f"{word}:*")) for word in search]
+            sanitized_terms = [
+                re.sub(r"[&|!()<>:*]", "", word)
+                for word in search
+                if re.sub(r"[&|!()<>:*]", "", word)
+            ]
+            conditions = [
+                Files.search_vector.op("@@")(
+                    func.to_tsquery(f"{term}" if len(term) <= 1 else f"{term}:*")
+                )
+                for term in sanitized_terms
+            ]
             combined_condition = and_(*conditions)
+
             files_query = (
                 SESSION.query(Files)
                 .filter(combined_condition)
@@ -149,6 +162,7 @@ async def get_filter_results(query, page=1, per_page=10):
             total_count_query = SESSION.query(func.count(Files.file_id)).filter(
                 combined_condition
             )
+
             total_count = total_count_query.scalar()
             files = files_query.offset(offset).limit(per_page).all()
 
@@ -169,8 +183,14 @@ async def get_filter_results(query, page=1, per_page=10):
             }
             redis_client.setex(key, 86400, json.dumps(result))
             return result
+
     except Exception as e:
-        LOGGER.warning("Error occurred while retrieving filter results: %s", str(e))
+        SESSION.rollback()
+        LOGGER.warning(
+            "Error occurred while retrieving filter results: %s : query: %s",
+            str(e),
+            query,
+        )
         return {"files": [], "total_count": 0}
 
 
@@ -256,5 +276,6 @@ async def count_files():
         LOGGER.warning("Error occurred while counting files: %s", str(e))
         return 0
 
+
 def clean_text(text):
-    return re.sub(r'[._]', ' ', text)
+    return re.sub(r"[._]", " ", text)
