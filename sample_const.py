@@ -229,4 +229,5 @@ STOP_WORDS = [
     "yourself",
     "yourselves",
     "daddy",
+    "bloody",
 ]
