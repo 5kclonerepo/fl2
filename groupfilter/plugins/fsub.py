@@ -1,6 +1,7 @@
 from pyrogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    CallbackQuery
 )
 from pyrogram.enums import ParseMode, ChatMemberStatus
 from pyrogram.errors import UserNotParticipant
@@ -15,6 +16,11 @@ from groupfilter.db.fsub_sql import (
 async def check_fsub(
     bot, message, force_sub, link, request, user_id, file_id, admin_settings
 ):
+    if isinstance(message, CallbackQuery):
+        msg = message.message
+    else:
+        msg = message
+        
     if admin_settings:
         if admin_settings.fsub_msg:
             fsub_msg = admin_settings.fsub_msg
@@ -26,9 +32,9 @@ async def check_fsub(
     try:
         user = await bot.get_chat_member(int(force_sub), user_id)
         if user.status == ChatMemberStatus.BANNED:
-            await message.reply_text("Sorry, you are Banned to use me.", quote=True)
+            await msg.reply_text("Sorry, you are Banned to use me.", quote=True)
             return False
-    except UserNotParticipant:
+    except UserNotParticipant:        
         if request:
             user_det = await is_req_user(int(user_id), int(force_sub))
             if user_det:
@@ -50,7 +56,7 @@ async def check_fsub(
             )
         if admin_settings:
             if admin_settings.fsub_msg and admin_settings.fsub_img:
-                await message.reply_photo(
+                await msg.reply_photo(
                     photo=fsub_img,
                     caption=txt,
                     reply_markup=kb,
@@ -59,19 +65,19 @@ async def check_fsub(
                 )
                 return False
             elif admin_settings.fsub_msg and not admin_settings.fsub_img:
-                await message.reply_text(
+                await msg.reply_text(
                     text=txt,
                     reply_markup=kb,
                     parse_mode=ParseMode.MARKDOWN,
                     quote=True,
                 )
-            return False
-        else:
-            await message.reply_text(txt, reply_markup=kb, quote=True)
-            return False
+                return False
+            else:
+                await msg.reply_text(txt, reply_markup=kb, quote=True)
+                return False
     except Exception as e:
         LOGGER.warning(e)
-        await message.reply_text(
+        await msg.reply_text(
             text="Something went wrong, please contact my support group",
             quote=True,
         )

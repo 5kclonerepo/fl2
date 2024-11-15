@@ -24,7 +24,7 @@ from groupfilter.plugins.fsub import check_fsub
 from groupfilter.db.files_sql import (
     get_filter_results,
     get_file_details,
-    get_precise_filter_results,
+    # get_precise_filter_results,
     redis_client,
 )
 from groupfilter.db.settings_sql import (
@@ -57,6 +57,7 @@ async def filter_(bot, message, search=None):
     admin_settings = await get_admin_settings()
     if admin_settings:
         if admin_settings.repair_mode:
+            await message.reply_text("Bot is in repair mode.", quote=True)
             return
 
     fltr = await is_filter(message.text)
@@ -112,7 +113,7 @@ async def filter_(bot, message, search=None):
                 nf_msg = await message.reply_text(admin_settings.notfound_msg)
             else:
                 msg = "No results found.\nOr retry with the correct spelling 🤐"
-                nf_msg =await message.reply_text(msg)
+                nf_msg = await message.reply_text(msg)
         if src:
             await src.delete()
     except ButtonDataInvalid as e:
@@ -192,11 +193,13 @@ async def get_result(search, page_no, user_id, username, chat_id):
     search_settings = await get_search_settings(chat_id)
 
     if search_settings and search_settings.precise_mode:
-        files = await get_precise_filter_results(query=search, page=page_no)
+        # files = await get_precise_filter_results(query=search, page=page_no)
         precise_search = "Enabled"
     else:
-        files = await get_filter_results(query=search, page=page_no)
-        precise_search = "Disabled"
+        pass
+
+    files = await get_filter_results(query=search, page=page_no)
+    precise_search = "Disabled"
 
     count = int(files["total_count"])
 
@@ -316,29 +319,27 @@ async def get_files(bot, query):
             await query.reply_text(text="Not your button")
             return
 
-        if await is_banned(user_id):
-            await query.reply_text(
-                "You are banned. You can't use this bot.", quote=True
-            )
+    if await is_banned(user_id):
+        await query.reply_text("You are banned. You can't use this bot.", quote=True)
+        return
+
+    force_sub = None
+    request = None
+    admin_settings = await get_admin_settings()
+
+    if admin_settings:
+        force_sub = admin_settings.fsub_channel
+        link = admin_settings.channel_link
+        request = admin_settings.join_req
+
+    if force_sub:
+        user_found = await check_fsub(
+            bot, query, force_sub, link, request, user_id, file_id, admin_settings
+        )
+        if not user_found:
             return
 
-        force_sub = None
-        request = None
-        admin_settings = await get_admin_settings()
-
-        if admin_settings:
-            force_sub = admin_settings.fsub_channel
-            link = admin_settings.channel_link
-            request = admin_settings.join_req
-
-        if force_sub:
-            user_found = await check_fsub(
-                bot, query, force_sub, link, request, user_id, file_id, admin_settings
-            )
-            if not user_found:
-                return
-
-        await send_file(admin_settings, bot, query, user_id, file_id)
+    await send_file(admin_settings, bot, query, user_id, file_id)
 
 
 async def send_file(admin_settings, bot, query, user_id, file_id):
@@ -391,6 +392,8 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
                 parse_mode=ParseMode.MARKDOWN,
                 quote=True,
             )
+        if user_id == "20516707":
+            LOGGER.info(msg)
     except MediaEmpty:
         LOGGER.warning("File not found: %s", str(file_id))
         return

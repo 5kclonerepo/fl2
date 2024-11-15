@@ -18,6 +18,8 @@ async def user_settings(bot, message):
 
 @Client.on_callback_query(filters.regex(r"^prec (.+)$"))
 async def set_precise_mode(bot, query):
+    await query.answer("Disabled permanently")
+    return
     user_id = query.from_user.id
     if not is_admin(user_id):
         query.answer(text="You are not allowed to use this command.", show_alert=True)
@@ -114,10 +116,10 @@ async def find_search_settings(group_id):
         elif list_mode:
             bkb.append(btn_kb)
         else:
-            await change_search_settings(group_id, link_mode=True)
+            await change_search_settings(group_id, button_mode=True)
             bkb.append(list_kb)
     else:
-        await change_search_settings(group_id, link_mode=True)
+        await change_search_settings(group_id, button_mode=True)
         bkb.append(btn_kb)
 
     set_kb = InlineKeyboardMarkup([kb, bkb])
