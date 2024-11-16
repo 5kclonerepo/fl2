@@ -173,6 +173,9 @@ async def pages(bot, query):
                     f"{result}",
                     link_preview_options=LinkPreviewOptions(is_disabled=True),
                 )
+        except ButtonDataInvalid as e:
+            LOGGER.error(btn)
+            LOGGER.error("ButtonDataInvalid: %s", str(e))
         except MessageNotModified:
             pass
     else:
@@ -316,11 +319,11 @@ async def get_files(bot, query):
         file_query = query.text.split()[1]
         fid_sp = file_query.split("_")
         file_id = "_".join(fid_sp[:-1])
-        org_user_id = file_query.split("_")[-1]
-        # chat_id = file_query.split("_")[-1]
-        if int(org_user_id) != int(user_id):
-            await query.reply_text(text="Not your button")
-            return
+        if not file_query.startswith("search"):
+            org_user_id = file_query.split("_")[-1]
+            if int(org_user_id) != int(user_id):
+                await query.reply_text(text="Not your button")
+                return
 
     if await is_banned(user_id):
         await query.reply_text("You are banned. You can't use this bot.", quote=True)
@@ -359,6 +362,11 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
 
     if admin_settings.caption_uname:
         f_caption = f_caption + "\n\n" + "**" + admin_settings.caption_uname + "**"
+                
+    if isinstance(query, CallbackQuery):
+        mess = query.message
+    elif isinstance(query, Message):
+        mess = query
 
     info = None
     if admin_settings.info_msg and admin_settings.info_img:
@@ -369,7 +377,7 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
                 caption=admin_settings.info_msg,
             )
         else:
-            info = await query.reply_photo(
+            info = await mess.reply_photo(
                 photo=admin_settings.info_img,
                 caption=admin_settings.info_msg,
                 quote=True,
@@ -391,7 +399,7 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
                 parse_mode=ParseMode.MARKDOWN,
             )
         else:
-            msg = await query.reply_cached_media(
+            msg = await mess.reply_cached_media(
                 file_id=file_id,
                 caption=f_caption,
                 parse_mode=ParseMode.MARKDOWN,
@@ -413,12 +421,6 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
                         chat_id=user_id,
                         photo=admin_settings.del_img,
                         caption=admin_settings.del_msg,
-                    )
-                elif isinstance(query, CallbackQuery):
-                    disc = await query.message.reply_photo(
-                        photo=admin_settings.del_img,
-                        caption=admin_settings.del_msg,
-                        quote=True,
                     )
                 else:
                     disc = await msg.reply_photo(
