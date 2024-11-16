@@ -1,5 +1,5 @@
 from pyrogram import Client
-from pyrogram.types import ChatMember
+from pyrogram.types import ChatMember, ChatJoinRequest
 from groupfilter import LOGGER
 from groupfilter.plugins.serve import send_file
 from groupfilter.db.settings_sql import get_admin_settings
@@ -20,7 +20,11 @@ async def new_join_req(bot, update):
         fsub = admin_settings.fsub_channel
         request = admin_settings.join_req
         link = admin_settings.channel_link
-        if link and request:
+        if update.invite_link:
+            inv_link = update.invite_link.invite_link
+        else:
+            inv_link = link
+        if link and request and str(link) == str(inv_link):
             if int(fsub) != chat_id:
                 return
             user_det = await is_req_user(int(user_id), int(chat_id))
@@ -51,7 +55,11 @@ async def new_joins(bot, update):
     if admin_settings:
         fsub = admin_settings.fsub_channel
         link = admin_settings.channel_link
-        if link:
+        if update.invite_link:
+            inv_link = update.invite_link.invite_link
+        else:
+            inv_link = link
+        if link and str(link) == str(inv_link):
             if int(fsub) != chat_id:
                 return
             user_det = await is_reg_user(int(user_id), int(chat_id))

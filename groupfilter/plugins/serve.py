@@ -303,6 +303,7 @@ async def get_result(search, page_no, user_id, username, chat_id):
 async def get_files(bot, query):
     user_id = query.from_user.id
     if isinstance(query, CallbackQuery):
+        mesg = query.message
         org_user_id = query.data.split("#")[2]
         # chat_id = query.data.split("#")[3]
         if int(org_user_id) != int(user_id):
@@ -321,9 +322,14 @@ async def get_files(bot, query):
                 pass
         return
     elif isinstance(query, Message):
+        mesg = query
         file_query = query.text.split()[1]
+        print(query.text)
         fid_sp = file_query.split("_")
         file_id = "_".join(fid_sp[:-1])
+        if fid_sp[0].startswith(("search", "start", " ")):
+            return
+        
         if not file_query.startswith(("search", "start")):
             org_user_id = file_query.split("_")[-1]
             if int(org_user_id) != int(user_id):
@@ -331,7 +337,7 @@ async def get_files(bot, query):
                 return
 
     if await is_banned(user_id):
-        await query.reply_text("You are banned. You can't use this bot.", quote=True)
+        await mesg.reply_text("You are banned. You can't use this bot.", quote=True)
         return
 
     force_sub = None

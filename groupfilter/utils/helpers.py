@@ -15,8 +15,7 @@ def get_input_file_from_file_id(
         decoded = FileId.decode(file_id)
     except Exception:
         raise ValueError(
-            f'Failed to decode "{
-                file_id}". The value does not represent an existing local file, '
+            f'Failed to decode "{file_id}". The value does not represent an existing local file, '
             f"HTTP URL, or valid file id."
         )
 
@@ -24,8 +23,7 @@ def get_input_file_from_file_id(
 
     if expected_file_type is not None and file_type != expected_file_type:
         raise ValueError(
-            f'Expected: "{expected_file_type}", got "{
-                file_type}" file_id instead'
+            f'Expected: "{expected_file_type}", got "{file_type}" file_id instead'
         )
 
     if file_type in (FileType.THUMBNAIL, FileType.CHAT_PHOTO):
@@ -116,9 +114,13 @@ def clean_fname(text):
 
 
 def clean_se(text):
-    match = re.search(r"(S\d+\s*E\d+|S\d+\s*EP\d+|S\d+|E\d+|EP\d+)", text, re.IGNORECASE)    
+    match = re.search(
+        r"(S\d+\s*E\d+|S\d+\s*EP\d+|S\d+|E\d+|EP\d+)", text, re.IGNORECASE
+    )
     if match:
         season_episode = match.group().replace(" ", "").upper()
-        formatted_text = f"[{season_episode}] " + re.sub(match.group(), "", text).strip()
-        return formatted_text    
+        formatted_text = (
+            f"[{season_episode}] " + re.sub(match.group(), "", text).strip()
+        )
+        return formatted_text
     return text
