@@ -168,3 +168,5 @@ groupfilter.session-wal
 groupfilter.session-journal
 .vscode/settings.json
 jobs.sqlite
+genlink.db
+jobs.sqlite-journal

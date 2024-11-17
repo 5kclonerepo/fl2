@@ -105,11 +105,14 @@ def edit_txt(c_caption):
 
 
 def clean_text(text):
-    return re.sub(r"[._\[\]{}()<>|;:'\",?!`~@#$%^&+=\\]", " ", text)
+    pattern = re.compile(r"\s*[._\[\]{}()<>|;:'\",?!`~@#$%^&+=\\]\s*")
+    return re.sub(pattern, " ", text).strip()
 
 
 def clean_fname(text):
-    pattern = re.compile("|".join(map(re.escape, REMOVE_WORDS)), flags=re.IGNORECASE)
+    pattern = re.compile(
+        rf"\s*\b({'|'.join(map(re.escape, REMOVE_WORDS))})\b\s*", flags=re.IGNORECASE
+    )
     return re.sub(pattern, " ", text).strip()
 
 
