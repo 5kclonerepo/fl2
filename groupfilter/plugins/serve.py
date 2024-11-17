@@ -327,13 +327,16 @@ async def get_files(bot, query):
         print(query.text)
         fid_sp = file_query.split("_")
         file_id = "_".join(fid_sp[:-1])
-        if fid_sp[0].startswith(("search", "start", " ")):
+        if not file_id or fid_sp[0].startswith(("search", "start", " ")):
             return
         
         if not file_query.startswith(("search", "start")):
             org_user_id = file_query.split("_")[-1]
-            if int(org_user_id) != int(user_id):
-                await query.reply_text(text="Not your button")
+            try:
+                if int(org_user_id) != int(user_id):
+                    await query.reply_text(text="Not your button")
+                    return
+            except ValueError:
                 return
 
     if await is_banned(user_id):
