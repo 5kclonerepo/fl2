@@ -9,7 +9,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.pool import StaticPool
 from groupfilter import DB_URL, LOGGER, BOT_TOKEN
 from groupfilter.utils.helpers import unpack_new_file_id
-from sample_const import STOP_WORDS
 from sqlalchemy import Index
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from groupfilter.db.redis import NamespacedRedis
@@ -152,16 +151,18 @@ async def get_filter_results(query, page=1, per_page=10):
         with INSERTION_LOCK:
             offset = (page - 1) * per_page
             search = [clean_query(word) for word in query.split() if clean_query(word)]
-            contains_stop_word = any(word.lower() in STOP_WORDS for word in search)
-            if contains_stop_word:
-                conditions = [Files.file_name.ilike(f"%{term}%") for term in search]
-            else:
-                conditions = [
-                    Files.search_vector.op("@@")(
-                        func.to_tsquery(f"{term}" if len(term) <= 1 else f"{term}:*")
+            # contains_stop_word = any(word.lower() in STOP_WORDS for word in search)
+            # if contains_stop_word:
+            #     conditions = [Files.file_name.ilike(f"%{term}%") for term in search]
+            # else:
+            conditions = [
+                Files.search_vector.op("@@")(
+                    func.plainto_tsquery(
+                        "simple", f"{term}" if len(term) <= 1 else f"{term}:*"
                     )
-                    for term in search
-                ]
+                )
+                for term in search
+            ]
             combined_condition = and_(*conditions)
             files_query = (
                 SESSION.query(Files)
@@ -171,7 +172,6 @@ async def get_filter_results(query, page=1, per_page=10):
             total_count_query = SESSION.query(func.count(Files.file_id)).filter(
                 combined_condition
             )
-
             total_count = total_count_query.scalar()
             files = files_query.offset(offset).limit(per_page).all()
 
