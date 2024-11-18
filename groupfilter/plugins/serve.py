@@ -149,9 +149,14 @@ async def filter_(bot, message, search=None):
 
 @Client.on_callback_query(filters.regex(r"^(nxt_pg|prev_pg) \d+ \d+ .+$"))
 async def pages(bot, query):
-    if not query.message:
-        await query.answer("Try with new search again", show_alert=True)
-        return
+    if isinstance(query, CallbackQuery):
+        if query.message:
+            if query.message.empty:
+                try:
+                    await query.answer("Try with new search again", show_alert=True)
+                    return
+                except QueryIdInvalid:
+                    return
     user_id = query.from_user.id
     chat_id = query.message.chat.id
     org_user_id, page_no, search = query.data.split(maxsplit=3)[1:]
@@ -312,12 +317,16 @@ async def get_result(search, page_no, user_id, username, chat_id):
 
 
 @Client.on_callback_query(filters.regex(r"^file#(.+)#(\d+)$"))
-async def get_files(bot, query):
+async def get_files(bot, query):    
     user_id = query.from_user.id
-    if not query.message:
-        await query.answer("Try with new search again", show_alert=True)
-        return
     if isinstance(query, CallbackQuery):
+        if query.message:
+            if query.message.empty:
+                try:
+                    await query.answer("Try with new search again", show_alert=True)
+                    return
+                except QueryIdInvalid:
+                    return
         mesg = query.message
         org_user_id = query.data.split("#")[2]
         # chat_id = query.data.split("#")[3]
