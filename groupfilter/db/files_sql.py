@@ -1,7 +1,7 @@
 import re
 import threading
 import json
-from sqlalchemy import create_engine, func, and_
+from sqlalchemy import create_engine, func, and_, or_
 from sqlalchemy import Column, TEXT, Numeric, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -157,12 +157,19 @@ async def get_filter_results(query, page=1, per_page=10):
             # else:
             conditions = [
                 Files.search_vector.op("@@")(
-                    func.plainto_tsquery(
-                        "simple", f"{term}" if len(term) <= 1 else f"{term}:*"
+                    func.plainto_tsquery("simple", term)
+                )
+                if len(term) <= 2  # Only use plainto_tsquery for short terms
+                else or_(
+                    Files.search_vector.op("@@")(
+                        func.plainto_tsquery("simple", term)
+                    ),
+                    Files.search_vector.op("@@")(
+                        func.to_tsquery("simple", f"{term}:*")
                     )
                 )
                 for term in search
-            ]
+]
             combined_condition = and_(*conditions)
             files_query = (
                 SESSION.query(Files)
