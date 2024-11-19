@@ -50,6 +50,9 @@ scheduler.start()
     ~filters.regex(r"^\/") & filters.text & filters.group & filters.incoming
 )
 async def filter_(bot, message, search=None):
+    if not message.from_user:
+        return
+    
     user_id = message.from_user.id
     chat_id = message.chat.id
 
