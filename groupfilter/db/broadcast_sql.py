@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.pool import StaticPool
-from groupfilter import DB_URL
+from groupfilter import DB_URL, LOGGER
 
 
 BASE = declarative_base()
@@ -67,3 +67,12 @@ async def del_user(user_id):
             SESSION.commit()
         except NoResultFound:
             pass
+
+async def count_users():
+    try:
+        with INSERTION_LOCK:
+            total_count = SESSION.query(Broadcast).count()
+            return total_count
+    except Exception as e:
+        LOGGER.warning("Error occurred while counting files: %s", str(e))
+        return 0

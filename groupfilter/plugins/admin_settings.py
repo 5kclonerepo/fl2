@@ -23,6 +23,7 @@ from groupfilter.db.settings_sql import (
 from groupfilter.db.ban_sql import is_banned, ban_user, unban_user
 from groupfilter.db.filters_sql import add_filter, rem_filter, list_filters
 from groupfilter.db.files_sql import count_files
+from groupfilter.db.broadcast_sql import count_users
 from groupfilter import ADMINS, DB_CHANNELS
 
 
@@ -333,6 +334,7 @@ async def force_sub(bot, update):
         f"Force Subscription channel set to `{channel}`\nInvite link: {link.invite_link}\nJoin Request: {request}"
     )
 
+
 @Client.on_message(
     filters.private & filters.command(["fsubrequest"]) & filters.user(ADMINS)
 )
@@ -349,7 +351,7 @@ async def fsub_req(bot, update):
                 "Please send in proper format `/fsubrequest on/off` if you want to set join request"
             )
             return
-        
+
         channel = None
         admin_settings = await get_admin_settings()
         if admin_settings:
@@ -359,10 +361,14 @@ async def fsub_req(bot, update):
                 return
 
         try:
-            link = await bot.create_chat_invite_link(int(channel), creates_join_request=request)
+            link = await bot.create_chat_invite_link(
+                int(channel), creates_join_request=request
+            )
             inv_link = link.invite_link
         except Exception as e:
-            await update.reply_text(f" Error while creating channel invite link: {str(e)}")
+            await update.reply_text(
+                f" Error while creating channel invite link: {str(e)}"
+            )
             return
 
         await set_channel_link(inv_link)
@@ -371,9 +377,8 @@ async def fsub_req(bot, update):
             f"Join Request set to: {request}\nInvite link: {link.invite_link}"
         )
     else:
-        await update.reply_text(
-            "Please send in proper format `/fsubrequest on/off`"
-        )
+        await update.reply_text("Please send in proper format `/fsubrequest on/off`")
+
 
 @Client.on_message(
     filters.private & filters.command(["checklink"]) & filters.user(ADMINS)
@@ -412,19 +417,20 @@ async def caption_username(bot, update):
 
 @Client.on_message(filters.private & filters.command(["total"]) & filters.user(ADMINS))
 async def count_f(bot, update):
-    count = await count_files()
-    await update.reply_text(f"**Total no. of files in DB:** `{count}`")
+    file_count = await count_files()
+    user_count = await count_users()
+    await update.reply_text(
+        f"**Total no. of files in DB:** `{file_count}`\n**Total no. of users in DB:** `{user_count}`"
+    )
 
 
 @Client.on_message(
     filters.private & filters.command(["infomsg"]) & filters.user(ADMINS)
 )
-async def set_info_msg_(bot, update):    
+async def set_info_msg_(bot, update):
     command_text = update.text.split(None, 1)
     if len(command_text) < 2:
-        await update.reply_text(
-            "Please use the correct format: `/infomsg message/off`"
-        )
+        await update.reply_text("Please use the correct format: `/infomsg message/off`")
         return
     text = command_text[1]
     infomsg = text.strip()
@@ -436,16 +442,13 @@ async def set_info_msg_(bot, update):
         await update.reply_text(f"Info message set to `{infomsg}`")
     else:
         await update.reply_text("Info message disabled")
-        
 
 
 @Client.on_message(filters.private & filters.command(["delmsg"]) & filters.user(ADMINS))
-async def set_del_msg_(bot, update):    
+async def set_del_msg_(bot, update):
     command_text = update.text.split(None, 1)
     if len(command_text) < 2:
-        await update.reply_text(
-            "Please use the correct format: `/delmsg message/off`"
-        )
+        await update.reply_text("Please use the correct format: `/delmsg message/off`")
         return
     text = command_text[1]
     msg = text.strip()
@@ -454,10 +457,9 @@ async def set_del_msg_(bot, update):
         msg = None
     await set_del_msg(msg)
     if msg:
-            await update.reply_text(f"Delete message set to `{msg}`")
+        await update.reply_text(f"Delete message set to `{msg}`")
     else:
         await update.reply_text("Delete message disabled")
-        
 
 
 @Client.on_message(
@@ -553,10 +555,9 @@ async def set_unavail_msg_(bot, update):
         msg = None
     await set_unavail_msg(msg)
     if msg:
-            await update.reply_text(f"Not found message set to `{msg}`")
+        await update.reply_text(f"Not found message set to `{msg}`")
     else:
         await update.reply_text("Not found message disabled")
-    
 
 
 @Client.on_message(
@@ -606,12 +607,9 @@ async def set_unavail_img_(bot, message):
     filters.private & filters.command(["fsubmsg"]) & filters.user(ADMINS)
 )
 async def set_fsub_msg_(bot, update):
-    
     command_text = update.text.split(None, 1)
     if len(command_text) < 2:
-        await update.reply_text(
-            "Please use the correct format: `/fsubmsg message/off`"
-        )
+        await update.reply_text("Please use the correct format: `/fsubmsg message/off`")
         return
     text = command_text[1]
     msg = text.strip()
@@ -623,7 +621,7 @@ async def set_fsub_msg_(bot, update):
         await update.reply_text(f"Fsub message set to `{msg}`")
     else:
         await update.reply_text("Fsub message disabled")
-        
+
 
 @Client.on_message(
     filters.private & filters.command(["fsubimg"]) & filters.user(ADMINS)
