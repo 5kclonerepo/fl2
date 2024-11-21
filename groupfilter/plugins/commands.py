@@ -89,7 +89,7 @@ async def help_cb(bot, query):
 async def restart(bot, update):
     LOGGER.warning("Restarting bot using /restart command")
     msg = await update.reply_text(text="__Restarting.....__")
-    scheduler.shutdown()
+    scheduler.shutdown(wait=False)
     await asyncio.sleep(5)
     await msg.edit("__Bot restarted !__")
     os.execv(sys.executable, ["python3", "-m", "groupfilter"] + sys.argv)

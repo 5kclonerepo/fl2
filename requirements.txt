@@ -15,4 +15,4 @@ typing_extensions
 tzlocal
 uvloop
 redis
-sqlite3
+bs4
