@@ -93,7 +93,7 @@ REMOVE_WORDS = [
     "Toonworld4all", "SONYLIV", "SS DD 5 1", "DD 5 1", "CC Telugu", "Cc Tamil", "cc new", "hindimovies", "bm links", 
     "mm links", "Piro", "DS4K", "DDP5 1", "DDP 5 1", "voot", "Fanszz", "Tv2us", "CC ALL", "AAC2 0", "AAC", "(", ")", 
     "Ddp2 0", "FBM ALL", "FB TAMIL", "FBM HW", "FBM NEW", "FBM x265", "FBM KOREAN", "FBM", "KICKASS", "TORRENTS", 
-    "@", "Dubbed", "Tamilblasters", "dubb", "ssrreq", "VGCINEMAS", "SNXT", "TG SKY MOVIES HD"
+    "@", "Dubbed", "Tamilblasters", "dubb", "ssrreq", "VGCINEMAS", "SNXT", "TG SKY MOVIES HD", "@R_A_R_B_G", "R_A_R_B_G"
 ]
 
 STOP_WORDS = []

@@ -111,9 +111,10 @@ def clean_text(text):
 
 def clean_fname(text):
     pattern = re.compile(
-        rf"\s*\b({'|'.join(map(re.escape, REMOVE_WORDS))})\b\s*", flags=re.IGNORECASE
+        rf"(?:{'|'.join(map(re.escape, REMOVE_WORDS))})",
+        flags=re.IGNORECASE
     )
-    return re.sub(pattern, " ", text).strip()
+    return re.sub(pattern, "", text).strip()
 
 
 def clean_se(text):
