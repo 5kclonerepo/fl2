@@ -1,7 +1,7 @@
 import re
 import asyncio
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, ChannelPrivate
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from groupfilter import ADMINS, LOGGER
 from groupfilter.db.files_sql import save_file, delete_file
@@ -15,7 +15,9 @@ index_task = None
 link_pattern = r"https://t\.me/c/(\d+)/(\d+)"
 
 
-@Client.on_message(filters.private & filters.user(ADMINS) & media_filter)
+@Client.on_message(
+    filters.private & filters.forwarded & filters.user(ADMINS) & media_filter
+)
 async def index_files(bot, message):
     global index_task
     user_id = message.from_user.id
@@ -28,7 +30,7 @@ async def index_files(bot, message):
                 chat_id = message.forward_from_chat.username
             else:
                 chat_id = message.forward_from_chat.id
-            await bot.get_messages(chat_id, last_msg_id)
+            await bot.get_messages(chat_id=chat_id, message_ids=last_msg_id)
 
             kb = InlineKeyboardMarkup(
                 [
@@ -133,10 +135,18 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
                 except FloodWait as e:
                     LOGGER.warning("FloodWait while indexing, Error: %s", str(e))
                     await asyncio.sleep(e.value)
-                    continue
+                    message = await bot.get_messages(
+                        chat_id=chat_id, message_ids=current, replies=0
+                    )
                 except asyncio.CancelledError:
                     LOGGER.info("Indexing task was cancelled.")
                     await msg.edit("Indexing process was cancelled.")
+                    return
+                except ChannelPrivate as e:
+                    LOGGER.warning(
+                        "Chat is private or bot is not an admin: %s : %s", chat_id, str(e)
+                    )
+                    await msg.edit(f"Chat is private or bot is not an admin: {chat_id}\nError: {str(e)}")
                     return
                 except Exception as e:
                     LOGGER.warning("Error occurred while fetching message: %s", str(e))
@@ -144,12 +154,12 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
 
                 try:
                     for file_type in ("document", "video", "audio"):
-                        media = getattr(message, file_type, None)                      
+                        media = getattr(message, file_type, None)
                         if media:
                             caption = message.caption
                             file_name = media.file_name
                             media.file_type = file_type
-                            media.caption = clean_text(caption) or clean_text(file_name)
+                            media.caption = clean_text(caption) if caption else clean_text(file_name)
                             save = await save_file(media)
                             if save:
                                 saved += 1
@@ -165,14 +175,21 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
                         kb = InlineKeyboardMarkup(
                             [
                                 [
-                                    InlineKeyboardButton("Cancel", callback_data="cancel_index"),
+                                    InlineKeyboardButton(
+                                        "Cancel", callback_data="cancel_index"
+                                    ),
                                 ]
                             ]
                         )
                         await msg.edit(
-                            f"Total messages fetched: {current}\nTotal messages processed: {total_files}", reply_markup=kb
+                            f"Total messages fetched: {current}\nTotal messages processed: {total_files}",
+                            reply_markup=kb,
                         )
-                        LOGGER.info("Total messages & files processed: %s : %s", current, total_files)
+                        LOGGER.info(
+                            "Total messages & files processed: %s : %s",
+                            current,
+                            total_files,
+                        )
                     except FloodWait as e:
                         LOGGER.warning(
                             "FloodWait while editing count message, sleeping for: %s seconds",
@@ -232,7 +249,7 @@ async def delete_files(bot, message):
                     await message.reply(
                         f"Error occurred while deleting `{media.file_name}`, please check logs for more info"
                     )
-                break            
+                break
     except Exception as e:
         LOGGER.warning("Error occurred while deleting file: %s", str(e))
 
