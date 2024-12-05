@@ -62,6 +62,7 @@ async def add_fsub_req_user(user_id, chat_id, fileid, msg_id):
                 .one()
             )
             fltr.fileid = fileid
+            fltr.msg_id = msg_id
             session.commit()
             return True
         except NoResultFound:
@@ -126,6 +127,7 @@ async def add_fsub_reg_user(user_id, chat_id, fileid, msg_id):
                 .one()
             )
             fltr.fileid = fileid
+            fltr.msg_id = msg_id
             session.commit()
             return True
         except NoResultFound:
