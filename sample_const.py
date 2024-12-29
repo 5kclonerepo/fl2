@@ -41,7 +41,7 @@ HELP_MSG = """
 ‣/logs - __Get logs as a file__
 ‣/server - __Get server stats__
 ‣/restart - __Restart the bot__
-‣/stats - __Get bot user stats__
+‣/stats - __Get bot user stats (Will send only after checking active users__
 ‣/broadcast - __Reply to a message to send that to all bot users__
 ‣/index - __Start indexing a database channel (bot must be admin of the channel if that is private channel)__
 __You can just forward the message from database channel for starting indexing, no need to use the /index command__
@@ -51,12 +51,12 @@ __`/indexlink <last message link>` or `/indexlink <start message link> <last mes
 ‣/autodelete - __Set file auto delete time in seconds__
 ‣/buttondel - __Set button message in groups auto delete time in seconds__
 ‣/repairmode - __Enable or disable repair mode - If on, bot will not send any files__
-‣/customcaption - __Set custom caption for files__ - `/customcaption caption/off`
-‣/setcaptionplus - __Set additional caption for files along with caption__ - `/setcaptionplus caption/off`
+‣/customcaption - __Set custom caption for files__ - Reply `/customcaption` to a message to set or `/customcaption off` to disable.
+‣/captionplus - __Set additional caption for files along with caption__ - Reply `/captionplus` to a message to set or `/captionplus off` to disable.
 ‣/adminsettings - __Get current admin settings__
 ‣/ban - __Ban a user from bot__ - `/ban user_id`
 ‣/unban - __Unban a user from bot__ - `/unban user_id`
-‣/addfilter - __Add a text filter__ - `/addfilter filter message` __or__ `/addfilter "filter multiple words" message` __(If a filter is there, bot will send the filter rather than file)__
+‣/addfilter - __Add a text filter__ - Reply `/addfilter keyword` to a message to set __(If a filter is there, bot will send the filter rather than file)__
 ‣/delfilter - __Delete a text filter__ - `/delfilter filter`
 ‣/listfilters - __List all filters currently added in the bot__
 ‣/forcesub - __Set force subscribe channel__ - `/forcesub channel_id/off` __or__ `/forcesub channel_id request`(for request channel) __Bot must be admin of that channel (Bot will create a new invite link for that channel)__
@@ -65,13 +65,13 @@ __`/indexlink <last message link>` or `/indexlink <start message link> <last mes
 ‣/fsubrequest2 - __Toggle force subscribe join request after adding force subscribe channel 2__ - `/fsubrequest2 on/off`
 ‣/clearfsubusers - __Clear all force subscribe users from db__
 ‣/checklink - __Check invite link for force subscribe channel__
-‣/infomsg - __Set info message before sending file__ - `/infomsg message/off`
+‣/infomsg - __Set info message before sending file__ - Reply `/infomsg` to a message to set or  `/infomsg off` to remove
 ‣/infoimg - __Set info image before sending file__ - Reply `/infoimg` to an image to set or  `/infoimg off` to remove
-‣/delmsg - __Set delete message after sending file (File auto delete needs to be enabled to work)__ - `/delmsg message/off`
+‣/delmsg - __Set delete message after sending file (File auto delete needs to be enabled to work)__ - Reply `/delmsg` to a message to set or  `/delmsg off` to remove
 ‣/delimg - __Set delete image after sending file (File auto delete needs to be enabled to work)__ - Reply `/delimg` to an image to set or  `/delimg off` to remove
-‣/notfoundmsg - __Set message to send when file not found__ - `/notfoundmsg message/off`
+‣/notfoundmsg - __Set message to send when file not found__ - Reply `/notfoundmsg` to a message to set or  `/notfoundmsg off` to remove
 ‣/notfoundimg - __Set image to send when file not found__ - Reply `/notfoundimg` to an image to set or  `/notfoundimg off` to remove
-‣/fsubmsg - __Set force subscribe message__ - `/fsubmsg message/off`
+‣/fsubmsg - __Set force subscribe message__ - Reply `/fsubmsg` to a message to set or  `/fsubmsg off` to remove
 ‣/fsubimg - __Set force subscribe image__ - Reply `/fsubimg` to an image to set or  `/fsubimg off` to remove
 ‣/total - __Get count of total files in DB__
 """

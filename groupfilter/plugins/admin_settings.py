@@ -1,4 +1,3 @@
-import re
 from pyrogram import Client, filters
 from groupfilter.db.settings_sql import (
     get_admin_settings,
@@ -69,50 +68,6 @@ async def repair_mode_(bot, update):
 
     else:
         await update.reply_text("Please send in proper format `/repairmode on/off`")
-
-
-@Client.on_message(
-    filters.private & filters.command(["customcaption"]) & filters.user(ADMINS)
-)
-async def custom_caption_(bot, update):
-    command_text = update.text.split(None, 1)
-    if len(command_text) < 2:
-        await update.reply_text(
-            "Please send in proper format `/customcaption caption/off`"
-        )
-        return
-    text = command_text[1]
-    caption = text.strip()
-
-    if caption.lower() == "off":
-        caption = None
-    await set_custom_caption(caption)
-    if caption:
-        await update.reply_text(f"Custom caption set to `{caption}`")
-    else:
-        await update.reply_text("Custom caption disabled")
-
-
-@Client.on_message(
-    filters.private & filters.command(["setcaptionplus"]) & filters.user(ADMINS)
-)
-async def caption_username(bot, update):
-    command_text = update.text.split(None, 1)
-    if len(command_text) < 2:
-        await update.reply_text(
-            "Please use the correct format: `/setcaptionplus caption/off`"
-        )
-        return
-    text = command_text[1]
-    captionplus = text.strip()
-
-    if captionplus.lower() == "off":
-        captionplus = None
-    await set_captionplus(captionplus)
-    if captionplus:
-        await update.reply_text(f"File additional caption set to:\n`{captionplus}`")
-    else:
-        await update.reply_text("File additional caption disabled")
 
 
 @Client.on_message(
@@ -251,29 +206,15 @@ async def unbanuser(bot, update):
 )
 async def addfilter(client, message):
     command_text = message.text.split(None, 1)
-    if len(command_text) < 2:
+    if len(command_text) < 2 and not message.reply_to_message:
         await message.reply_text(
-            "Please use the correct format: `/addfilter keyword message`"
+            "Please use the correct format: `/addfilter keyword` and reply to the message with the filter text."
         )
         return
-    text = command_text[1]
-    match = re.match(r'^"(.*?)"\s+(.*)', text, re.DOTALL)
-    if match:
-        filter_word = match.group(1).lower()
-        filter_text = match.group(2).strip()
-    else:
-        parts = text.split(None, 1)
-        if len(parts) < 2:
-            await message.reply_text(
-                "Please use the correct format: `/addfilter keyword message`"
-            )
-            return
-        filter_word = parts[0].lower()
-        filter_text = parts[1].strip()
 
-    if not filter_text:
-        await message.reply_text("The filter message cannot be empty.")
-        return
+    filter_text = message.reply_to_message.text.markdown
+    filter_word = command_text[1].lower()
+
     added = await add_filter(filter_word, filter_text)
     if added:
         await message.reply_text(f"Filter `{filter_word}` added successfully.")
@@ -309,6 +250,58 @@ async def list_filter(bot, update):
         await update.reply_text(f"**Available Filters:** {fltr_msg}")
     else:
         await update.reply_text("No filters found")
+
+
+@Client.on_message(
+    filters.private & filters.command(["customcaption"]) & filters.user(ADMINS)
+)
+async def custom_caption_(bot, message):
+    command_text = message.text.split(None, 1)
+    if len(command_text) == 2:
+        if command_text[1].lower() == "off":
+            await set_custom_caption(None)
+            await message.reply_text("Custom caption disabled")
+        else:
+            await message.reply_text(
+                "Please use the correct format: `/customcaption off`"
+            )
+        return
+
+    if len(command_text) > 2 or not message.reply_to_message:
+        await message.reply_text(
+            "Please use the correct format: reply to a message with `/customcaption` or `/customcaption off`"
+        )
+        return
+
+    caption = message.reply_to_message.text.markdown
+    await set_custom_caption(caption)
+    await message.reply_text(f"Custom caption set to {caption}")
+
+
+@Client.on_message(
+    filters.private & filters.command(["captionplus"]) & filters.user(ADMINS)
+)
+async def caption_plus(bot, message):
+    command_text = message.text.split(None, 1)
+    if len(command_text) == 2:
+        if command_text[1].lower() == "off":
+            await set_captionplus(None)
+            await message.reply_text("Additional caption disabled")
+        else:
+            await message.reply_text(
+                "Please use the correct format: `/captionplus off`"
+            )
+        return
+
+    if len(command_text) > 2 or not message.reply_to_message:
+        await message.reply_text(
+            "Please use the correct format: reply to a message with `/captionplus` or `/captionplus off`"
+        )
+        return
+
+    caption = message.reply_to_message.text.markdown
+    await set_captionplus(caption)
+    await message.reply_text(f"Additional caption set to {caption}")
 
 
 @Client.on_message(
@@ -534,39 +527,47 @@ async def count_f(bot, update):
 @Client.on_message(
     filters.private & filters.command(["infomsg"]) & filters.user(ADMINS)
 )
-async def set_info_msg_(bot, update):
-    command_text = update.text.split(None, 1)
-    if len(command_text) < 2:
-        await update.reply_text("Please use the correct format: `/infomsg message/off`")
+async def set_info_msg_(bot, message):
+    command_text = message.text.split(None, 1)
+    if len(command_text) == 2:
+        if command_text[1].lower() == "off":
+            await set_info_msg(None)
+            await message.reply_text("Info message disabled")
+        else:
+            await message.reply_text("Please use the correct format: `/infomsg off`")
         return
-    text = command_text[1]
-    infomsg = text.strip()
 
-    if infomsg.lower() == "off":
-        infomsg = None
+    if len(command_text) > 2 or not message.reply_to_message:
+        await message.reply_text(
+            "Please use the correct format: reply to a message with `/infomsg` or `/infomsg off`"
+        )
+        return
+
+    infomsg = message.reply_to_message.text.markdown
     await set_info_msg(infomsg)
-    if infomsg:
-        await update.reply_text(f"Info message set to `{infomsg}`")
-    else:
-        await update.reply_text("Info message disabled")
+    await message.reply_text(f"Info message set to {infomsg}")
 
 
 @Client.on_message(filters.private & filters.command(["delmsg"]) & filters.user(ADMINS))
-async def set_del_msg_(bot, update):
-    command_text = update.text.split(None, 1)
-    if len(command_text) < 2:
-        await update.reply_text("Please use the correct format: `/delmsg message/off`")
+async def set_del_msg_(bot, message):
+    command_text = message.text.split(None, 1)
+    if len(command_text) == 2:
+        if command_text[1].lower() == "off":
+            await set_del_msg(None)
+            await message.reply_text("Delete message disabled")
+        else:
+            await message.reply_text("Please use the correct format: `/delmsg off`")
         return
-    text = command_text[1]
-    msg = text.strip()
 
-    if msg.lower() == "off":
-        msg = None
-    await set_del_msg(msg)
-    if msg:
-        await update.reply_text(f"Delete message set to `{msg}`")
-    else:
-        await update.reply_text("Delete message disabled")
+    if len(command_text) > 2 or not message.reply_to_message:
+        await message.reply_text(
+            "Please use the correct format: reply to a message with `/delmsg` or `/delmsg off`"
+        )
+        return
+
+    delmsg = message.reply_to_message.text.markdown
+    await set_del_msg(delmsg)
+    await message.reply_text(f"Delete message set to {delmsg}")
 
 
 @Client.on_message(
@@ -648,23 +649,27 @@ async def set_del_img_(bot, message):
 @Client.on_message(
     filters.private & filters.command(["notfoundmsg"]) & filters.user(ADMINS)
 )
-async def set_unavail_msg_(bot, update):
-    command_text = update.text.split(None, 1)
-    if len(command_text) < 2:
-        await update.reply_text(
-            "Please use the correct format: `/notfoundmsg message/off`"
+async def set_unavail_msg_(bot, message):
+    command_text = message.text.split(None, 1)
+    if len(command_text) == 2:
+        if command_text[1].lower() == "off":
+            await set_unavail_msg(None)
+            await message.reply_text("Not Found message disabled")
+        else:
+            await message.reply_text(
+                "Please use the correct format: `/notfoundmsg off`"
+            )
+        return
+
+    if len(command_text) > 2 or not message.reply_to_message:
+        await message.reply_text(
+            "Please use the correct format: reply to a message with `/notfoundmsg` or `/notfoundmsg off`"
         )
         return
-    text = command_text[1]
-    msg = text.strip()
 
-    if msg.lower() == "off":
-        msg = None
-    await set_unavail_msg(msg)
-    if msg:
-        await update.reply_text(f"Not found message set to `{msg}`")
-    else:
-        await update.reply_text("Not found message disabled")
+    unavlmsg = message.reply_to_message.text.markdown
+    await set_unavail_msg(unavlmsg)
+    await message.reply_text(f"Not Found message set to {unavlmsg}")
 
 
 @Client.on_message(
@@ -713,21 +718,25 @@ async def set_unavail_img_(bot, message):
 @Client.on_message(
     filters.private & filters.command(["fsubmsg"]) & filters.user(ADMINS)
 )
-async def set_fsub_msg_(bot, update):
-    command_text = update.text.split(None, 1)
-    if len(command_text) < 2:
-        await update.reply_text("Please use the correct format: `/fsubmsg message/off`")
+async def set_fsub_msg_(bot, message):
+    command_text = message.text.split(None, 1)
+    if len(command_text) == 2:
+        if command_text[1].lower() == "off":
+            await set_fsub_msg(None)
+            await message.reply_text("Fsub message disabled")
+        else:
+            await message.reply_text("Please use the correct format: `/fsubmsg off`")
         return
-    text = command_text[1]
-    msg = text.strip()
 
-    if msg.lower() == "off":
-        msg = None
-    await set_fsub_msg(msg)
-    if msg:
-        await update.reply_text(f"Fsub message set to `{msg}`")
-    else:
-        await update.reply_text("Fsub message disabled")
+    if len(command_text) > 2 or not message.reply_to_message:
+        await message.reply_text(
+            "Please use the correct format: reply to a message with `/fsubmsg` or `/fsubmsg off`"
+        )
+        return
+
+    fsubmsg = message.reply_to_message.text.markdown
+    await set_fsub_msg(fsubmsg)
+    await message.reply_text(f"Fsub message set to {fsubmsg}")
 
 
 @Client.on_message(
