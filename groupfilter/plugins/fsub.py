@@ -6,7 +6,7 @@ from pyrogram.types import (
     Message,
 )
 from pyrogram.enums import ParseMode, ChatMemberStatus
-from pyrogram.errors import UserNotParticipant
+from pyrogram.errors import UserNotParticipant, QueryIdInvalid
 from groupfilter import LOGGER, ADMINS
 from groupfilter.db.fsub_sql import (
     add_fsub_req_user,
