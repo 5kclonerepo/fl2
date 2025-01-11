@@ -1,5 +1,6 @@
 import asyncio
 import re
+import json
 from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
@@ -85,11 +86,33 @@ async def filter_(bot, message, search=None):
 
     fltr = await is_filter(message.text)
     if fltr:
-        await message.reply_text(
-            text=fltr.message,
-            quote=True,
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        btns = None
+        if fltr.buttons:
+            btn_data = json.loads(fltr.buttons)
+            btns = [
+            [InlineKeyboardButton(text=button['text'], url=button['url']) for button in row]
+            for row in btn_data
+            ]
+            btns = InlineKeyboardMarkup(btns)            
+        if fltr.media_type == "photo":
+            await message.reply_photo(fltr.file_id, caption=fltr.message, reply_markup=btns)
+        elif fltr.media_type == "video":
+            await message.reply_video(fltr.file_id, caption=fltr.message, reply_markup=btns)
+        elif fltr.media_type == "animation":
+            await message.reply_animation(fltr.file_id, caption=fltr.message, reply_markup=btns)
+        elif fltr.media_type == "sticker":
+            await message.reply_sticker(fltr.file_id)
+        elif fltr.media_type == "text":
+            await message.reply_text(
+                text=fltr.message,
+                quote=True,
+                reply_markup=btns, 
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        else:
+            await message.reply_text(
+                "Unable to send the custom filter, please contact the admin.",
+            )
         return
 
     src = None

@@ -1,3 +1,4 @@
+import json
 from pyrogram import Client, filters
 from groupfilter.db.settings_sql import (
     get_admin_settings,
@@ -211,11 +212,47 @@ async def addfilter(client, message):
             "Please use the correct format: `/addfilter keyword` and reply to the message with the filter text."
         )
         return
+    
+    reply_msg = message.reply_to_message    
+    media_type = None
+    file_id = None
 
-    filter_text = message.reply_to_message.text.markdown
+    if reply_msg.text:
+        media_type = "text"
+        file_id = None
+        filter_text = reply_msg.text.markdown
+    elif reply_msg.photo:
+        media_type = "photo"
+        file_id = reply_msg.photo.file_id
+        filter_text = reply_msg.caption.markdown
+    elif reply_msg.video:
+        media_type = "video"
+        file_id = reply_msg.video.file_id
+        filter_text = reply_msg.caption.markdown
+    elif reply_msg.animation:
+        media_type = "animation"
+        file_id = reply_msg.animation.file_id
+        filter_text = reply_msg.caption.markdown
+    elif reply_msg.sticker:
+        media_type = "sticker"
+        file_id = reply_msg.sticker.file_id
+        filter_text = None
+    else:
+        await message.reply_text("Unsupported format, please reply to a message with text, photo, video, gif or sticker.")
+        return
+
     filter_word = command_text[1].lower()
+    buttons = reply_msg.reply_markup
+    if buttons:
+        button_data = [
+            [{"text": button.text, "url": button.url} for button in row]
+            for row in buttons.inline_keyboard
+        ]
+        btn_json = json.dumps(button_data)
+    else:
+        btn_json = None
 
-    added = await add_filter(filter_word, filter_text)
+    added = await add_filter(filter_word, filter_text, btn_json, media_type, file_id)
     if added:
         await message.reply_text(f"Filter `{filter_word}` added successfully.")
     else:

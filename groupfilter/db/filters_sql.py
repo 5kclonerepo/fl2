@@ -1,6 +1,6 @@
 import threading
 from sqlalchemy import create_engine
-from sqlalchemy import Column, TEXT
+from sqlalchemy import Column, TEXT, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
@@ -15,10 +15,16 @@ class Filters(BASE):
     __tablename__ = "filters"
     filters = Column(TEXT, primary_key=True)
     message = Column(TEXT)
+    buttons = Column(JSON)
+    media_type = Column(TEXT)
+    file_id = Column(TEXT)
 
-    def __init__(self, filters, message):
+    def __init__(self, filters, message, buttons=None, media_type=None, file_id=None):
         self.filters = filters
         self.message = message
+        self.buttons = buttons
+        self.media_type = media_type
+        self.file_id = file_id
 
 
 def start() -> scoped_session:
@@ -32,12 +38,12 @@ SESSION = start()
 INSERTION_LOCK = threading.RLock()
 
 
-async def add_filter(filters, message):
+async def add_filter(filters, message, buttons=None, media_type=None, file_id=None):
     with INSERTION_LOCK:
         try:
             fltr = SESSION.query(Filters).filter(Filters.filters.ilike(filters)).one()
         except NoResultFound:
-            fltr = Filters(filters=filters, message=message)
+            fltr = Filters(filters=filters, message=message, buttons=buttons, media_type=media_type, file_id=file_id)
             SESSION.add(fltr)
             SESSION.commit()
             return True
