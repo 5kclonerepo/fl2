@@ -51,10 +51,10 @@ async def is_user(user_id):
             return False
 
 
-async def query_msg():
+async def get_users():
     try:
-        query = SESSION.query(Broadcast.user_id).order_by(Broadcast.user_id)
-        return query.all()
+        users = SESSION.query(Broadcast.user_id).order_by(Broadcast.user_id)
+        return [user[0] for user in users.all()]
     finally:
         SESSION.close()
 
@@ -67,6 +67,7 @@ async def del_user(user_id):
             SESSION.commit()
         except NoResultFound:
             pass
+
 
 async def count_users():
     try:
