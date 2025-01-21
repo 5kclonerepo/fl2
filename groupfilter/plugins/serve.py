@@ -55,11 +55,13 @@ scheduler.start()
 async def filter_(bot, message, search=None):
     if not message.from_user:
         return
-    
+
     if AUTH_GRPS:
         if message.chat.id not in AUTH_GRPS:
             try:
-                await bot.send_message(message.chat.id , "This chat is not authorized to use me!!! BYE!")
+                await bot.send_message(
+                    message.chat.id, "This chat is not authorized to use me!!! BYE!"
+                )
             except Exception:
                 pass
             try:
@@ -68,10 +70,13 @@ async def filter_(bot, message, search=None):
                 LOGGER.warning("Failed to leave chat: %s", message.chat.id)
             for admin in ADMINS:
                 try:
-                    await bot.send_message(admin, f"Left unauthorized chat.\nID:{message.chat.id}\nName: {message.chat.title}")
+                    await bot.send_message(
+                        admin,
+                        f"Left unauthorized chat.\nID:{message.chat.id}\nName: {message.chat.title}",
+                        disable_notification=True,
+                    )
                 except Exception:
                     pass
-        
 
     user_id = message.from_user.id
     chat_id = message.chat.id
@@ -92,23 +97,32 @@ async def filter_(bot, message, search=None):
         if fltr.buttons:
             btn_data = json.loads(fltr.buttons)
             btns = [
-            [InlineKeyboardButton(text=button['text'], url=button['url']) for button in row]
-            for row in btn_data
+                [
+                    InlineKeyboardButton(text=button["text"], url=button["url"])
+                    for button in row
+                ]
+                for row in btn_data
             ]
-            btns = InlineKeyboardMarkup(btns)            
+            btns = InlineKeyboardMarkup(btns)
         if fltr.media_type == "photo":
-            await message.reply_photo(fltr.file_id, caption=fltr.message, reply_markup=btns)
+            await message.reply_photo(
+                fltr.file_id, caption=fltr.message, reply_markup=btns
+            )
         elif fltr.media_type == "video":
-            await message.reply_video(fltr.file_id, caption=fltr.message, reply_markup=btns)
+            await message.reply_video(
+                fltr.file_id, caption=fltr.message, reply_markup=btns
+            )
         elif fltr.media_type == "animation":
-            await message.reply_animation(fltr.file_id, caption=fltr.message, reply_markup=btns)
+            await message.reply_animation(
+                fltr.file_id, caption=fltr.message, reply_markup=btns
+            )
         elif fltr.media_type == "sticker":
             await message.reply_sticker(fltr.file_id)
         elif fltr.media_type == "text":
             await message.reply_text(
                 text=fltr.message,
                 quote=True,
-                reply_markup=btns, 
+                reply_markup=btns,
                 parse_mode=ParseMode.MARKDOWN,
             )
         else:
@@ -279,7 +293,7 @@ async def get_result(search, page_no, user_id, username, chat_id):
         search_md = "HyperLink"
     else:
         search_md = "Button"
-        
+
     ads_list = await get_promos()
     if ads_list:
         ad_index = random.randint(0, len(ads_list) - 1)
@@ -304,10 +318,10 @@ async def get_result(search, page_no, user_id, username, chat_id):
                 btn_count += 1
                 filename = f"**{index}.** [{file_name}](https://t.me/{username}/?start={file_id}_{user_id}) -\n`[{file_size}]`"
                 result += "\n" + filename
-                if btn_count == len(files["files"]) // 2 and ads_list:                  
+                if btn_count == len(files["files"]) // 2 and ads_list:
                     current_ad = ads_list[ad_index]
-                    AD_TEXT = current_ad['btn_txt']
-                    AD_URL = current_ad['link']
+                    AD_TEXT = current_ad["btn_txt"]
+                    AD_URL = current_ad["link"]
                     AD_KB = f"**AD.** [{AD_TEXT}]({AD_URL})"
                     result += "\n" + AD_KB
             elif list_mode == "ON":
@@ -334,11 +348,11 @@ async def get_result(search, page_no, user_id, username, chat_id):
                 )
                 btn.append([btn_kb])
                 btn_count += 1
-                if btn_count == len(files["files"]) // 2 and ads_list:                  
+                if btn_count == len(files["files"]) // 2 and ads_list:
                     current_ad = ads_list[ad_index]
-                    AD_TEXT = current_ad['btn_txt']
-                    AD_URL = current_ad['link']
-                    AD_KB = InlineKeyboardButton(text=f"{AD_TEXT}", url=f'{AD_URL}')
+                    AD_TEXT = current_ad["btn_txt"]
+                    AD_URL = current_ad["link"]
+                    AD_KB = InlineKeyboardButton(text=f"{AD_TEXT}", url=f"{AD_URL}")
                     # ad_index = (ad_index + 1) % len(ads_list)
                     btn.append([AD_KB])
 
