@@ -13,6 +13,8 @@ START_KB = InlineKeyboardMarkup(
         ]
     ]
 )
+
+
 HELP_KB = InlineKeyboardMarkup(
     [
         [
@@ -22,62 +24,163 @@ HELP_KB = InlineKeyboardMarkup(
 )
 
 
+HELP_MOD_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("🚫 Bans", callback_data="hlp_ban"),
+            InlineKeyboardButton("💬 Custom Messages", callback_data="hlp_cstmsg"),
+        ],
+        [
+            InlineKeyboardButton("📝 Custom Captions", callback_data="hlp_ccptn"),
+            InlineKeyboardButton("🗑️ Delete", callback_data="hlp_del"),
+        ],
+        [
+            InlineKeyboardButton("📱 Force Sub", callback_data="hlp_fsub"),
+            InlineKeyboardButton("📝 Filters", callback_data="hlp_fltr"),
+        ],
+        [
+            InlineKeyboardButton("📚 Index", callback_data="hlp_indx"),
+            InlineKeyboardButton("📢 Promotions", callback_data="hlp_promo"),
+        ],
+        [
+            InlineKeyboardButton("⚙️ Settings", callback_data="hlp_sets"),
+            InlineKeyboardButton("📊 Utilities", callback_data="hlp_utls"),
+        ],
+        [
+            InlineKeyboardButton("🔙 Back", callback_data="back_m"),
+        ],
+    ]
+)
+
+
+HELP_BK_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("🔙 Back", callback_data="helpmod_cb"),
+        ],
+    ]
+)
+
+
 START_MSG = "Hi **[{}](tg://user?id={})**, I am a an autofilter bot which finds & shares media from my database."
+
 
 HELP_MSG = """
 **You can find the bot commands here.**
-**Group Commands:-**
-‣/help - __Show this help message__
-‣/settings - __Toggle settings of Precise Mode and Button Mode__
-`Precise Mode:` 
-- __If Enabled, bot will match the word & return results with only the exact match__
-- __If Disabled, bot will match the word & return all the results containing the word__ 
+
+‣ /help - __Show this help message__
+
+>**Tap on corresponding modules to get the commands of that module.**
+"""
+
+
+PROMO_HLP_MSG = """
+>**Manage Promotional Links**
+>__Easily add, delete, or view promotional links displayed between search results.__
+
+‣ /addpromo - __Set promotional links between results__ - `/addpromo "Button Text" URL`
+‣ /delpromo - __Delete promotional links between results__ - `/delpromo URL`
+‣ /listpromos - __List all promotional links currently added in the DB__
+"""
+
+FSUB_HLP_MSG = """
+>**Force Subscription Management**
+>__Set, manage, or clear force subscribe channels.__ 
+
+‣ /forcesub - __Set force subscribe channel__ - `/forcesub channel_id/off` __or__ `/forcesub channel_id request`(for request channel) __Bot must be admin of that channel (Bot will create a new invite link for that channel)__
+‣ /forcesub2 - __Set force subscribe channel 2__ - `/forcesub2 channel_id/off` __or__ `/forcesub2 channel_id request`(for request channel) __Bot must be admin of that channel (Bot will create a new invite link for that channel)__
+‣ /fsubrequest - __Toggle force subscribe join request after adding force subscribe channel__ - `/fsubrequest on/off`
+‣ /fsubrequest2 - __Toggle force subscribe join request after adding force subscribe channel 2__ - `/fsubrequest2 on/off`
+‣ /clearfsubusers - __Clear all force subscribe users from db__
+‣ /checklink - __Check invite link for force subscribe channel__
+"""
+
+FLTR_HLP_MSG = """
+>**Filter Management**
+>__Add, delete, or view filters to customize responses based on keywords.__
+
+‣ /addfilter - __Add a text filter__ - Reply `/addfilter keyword` to a message to set __(If a filter is there, bot will send the filter rather than file)__
+‣ /delfilter - __Delete a text filter__ - `/delfilter filter`
+‣ /listfilters - __List all filters currently added in the bot__
+
+__Supports text/photo/video/animation/sticker__
+"""
+
+BAN_HLP_MSG = """
+>**User Management**
+>__Ban or unban users to control access to the bot.__
+
+‣ /ban - __Ban a user from bot__ - `/ban user_id`
+‣ /unban - __Unban a user from bot__ - `/unban user_id`
+"""
+
+CUST_MSG_HLP_MSG = """
+>**Custom Messages & Images**
+>__Configure custom messages and images for various actions, such as file info, file deletion, file not found, or force subscription prompts.__
+
+‣ /infomsg - __Set info message before sending file__ - Reply `/infomsg` to a message to set or  `/infomsg off` to remove
+‣ /infoimg - __Set info image before sending file__ - Reply `/infoimg` to an image to set or  `/infoimg off` to remove
+‣ /delmsg - __Set delete message after sending file (File auto delete needs to be enabled to work)__ - Reply `/delmsg` to a message to set or  `/delmsg off` to remove
+‣ /delimg - __Set delete image after sending file (File auto delete needs to be enabled to work)__ - Reply `/delimg` to an image to set or  `/delimg off` to remove
+‣ /notfoundmsg - __Set message to send when file not found__ - Reply `/notfoundmsg` to a message to set or  `/notfoundmsg off` to remove
+‣ /notfoundimg - __Set image to send when file not found__ - Reply `/notfoundimg` to an image to set or  `/notfoundimg off` to remove
+‣ /fsubmsg - __Set force subscribe message__ - Reply `/fsubmsg` to a message to set or  `/fsubmsg off` to remove
+‣ /fsubimg - __Set force subscribe image__ - Reply `/fsubimg` to an image to set or  `/fsubimg off` to remove
+"""
+
+CAP_HLP_MSG = """
+>**File Caption Management**
+>__Manage or customize captions for files, including additional captions, to enhance file presentation.__
+
+‣ /customcaption - __Set custom caption for files__ - Reply `/customcaption` to a message to set or `/customcaption off` to disable.
+‣ /captionplus - __Set additional caption for files along with caption__ - Reply `/captionplus` to a message to set or `/captionplus off` to disable.
+"""
+
+DEL_HLP_MSG = """
+>**File/Auto Deletion Management**
+>__Delete files from the database or configure auto-delete settings for files and button messages in groups.__
+
+‣ /delete - __Reply to a file to delete it from database__
+‣ /autodelete - __Set file auto delete time in seconds__
+‣ /buttondel - __Set button message in groups auto delete time in seconds__
+"""
+
+INDX_HLP_MSG = """
+>**Database Indexing**
+>__Index a database channel by forwarding messages or using links. Supports private channels if the bot is an admin.__
+
+‣ /index - __Start indexing a database channel (bot must be admin of the channel if that is private channel)__
+__You can just forward the message from database channel for starting indexing, no need to use the /index command__
+‣ /indexlink - __Start indexing a database channel using link (bot must be admin of the channel if that is private channel)__
+__`/indexlink last_message_link` or `/indexlink start_message_link last_message_link`__
+"""
+
+SET_HLP_MSG = """
+>**Bot Settings Management**
+__Customize behavior, including result formats (Button, List, or Hyperlink), enabling repair mode, and viewing admin settings.__
+
+‣ /settings - __Toggle settings of Button Mode__
 `Result Mode:` 
 - __If Button, bot will return results in button format__
 - __If List, bot will return results in list format__
 - __If HyperLink, bot will return results in hyperlink format__
 
-**Admin Commands:-**
-‣/logs - __Get logs as a file__
-‣/server - __Get server stats__
-‣/restart - __Restart the bot__
-‣/stats - __Get bot user stats (Will send only after checking active users__
-‣/broadcast - __Reply to a message to send that to all bot users__
-‣/index - __Start indexing a database channel (bot must be admin of the channel if that is private channel)__
-__You can just forward the message from database channel for starting indexing, no need to use the /index command__
-/indexlink - __Start indexing a database channel using link (bot must be admin of the channel if that is private channel)__
-__`/indexlink <last message link>` or `/indexlink <start message link> <last message link>`__
-‣/delete - __Reply to a file to delete it from database__
-‣/autodelete - __Set file auto delete time in seconds__
-‣/buttondel - __Set button message in groups auto delete time in seconds__
-‣/repairmode - __Enable or disable repair mode - If on, bot will not send any files__
-‣/customcaption - __Set custom caption for files__ - Reply `/customcaption` to a message to set or `/customcaption off` to disable.
-‣/captionplus - __Set additional caption for files along with caption__ - Reply `/captionplus` to a message to set or `/captionplus off` to disable.
-‣/adminsettings - __Get current admin settings__
-‣/ban - __Ban a user from bot__ - `/ban user_id`
-‣/unban - __Unban a user from bot__ - `/unban user_id`
-‣/addfilter - __Add a text filter__ - Reply `/addfilter keyword` to a message to set __(If a filter is there, bot will send the filter rather than file)__
-‣/delfilter - __Delete a text filter__ - `/delfilter filter`
-‣/listfilters - __List all filters currently added in the bot__
-‣/forcesub - __Set force subscribe channel__ - `/forcesub channel_id/off` __or__ `/forcesub channel_id request`(for request channel) __Bot must be admin of that channel (Bot will create a new invite link for that channel)__
-‣/forcesub2 - __Set force subscribe channel 2__ - `/forcesub2 channel_id/off` __or__ `/forcesub2 channel_id request`(for request channel) __Bot must be admin of that channel (Bot will create a new invite link for that channel)__
-‣/fsubrequest - __Toggle force subscribe join request after adding force subscribe channel__ - `/fsubrequest on/off`
-‣/fsubrequest2 - __Toggle force subscribe join request after adding force subscribe channel 2__ - `/fsubrequest2 on/off`
-‣/clearfsubusers - __Clear all force subscribe users from db__
-‣/checklink - __Check invite link for force subscribe channel__
-‣/infomsg - __Set info message before sending file__ - Reply `/infomsg` to a message to set or  `/infomsg off` to remove
-‣/infoimg - __Set info image before sending file__ - Reply `/infoimg` to an image to set or  `/infoimg off` to remove
-‣/delmsg - __Set delete message after sending file (File auto delete needs to be enabled to work)__ - Reply `/delmsg` to a message to set or  `/delmsg off` to remove
-‣/delimg - __Set delete image after sending file (File auto delete needs to be enabled to work)__ - Reply `/delimg` to an image to set or  `/delimg off` to remove
-‣/notfoundmsg - __Set message to send when file not found__ - Reply `/notfoundmsg` to a message to set or  `/notfoundmsg off` to remove
-‣/notfoundimg - __Set image to send when file not found__ - Reply `/notfoundimg` to an image to set or  `/notfoundimg off` to remove
-‣/fsubmsg - __Set force subscribe message__ - Reply `/fsubmsg` to a message to set or  `/fsubmsg off` to remove
-‣/fsubimg - __Set force subscribe image__ - Reply `/fsubimg` to an image to set or  `/fsubimg off` to remove
-‣/addpromo - __Set promotional links between results__ - `/addpromo "Button Text" URL`
-‣/delpromo - __Delete promotional links between results__ - `/delpromo URL`
-‣/listpromos - __List all promotional links currently added in the DB__
-‣/total - __Get count of total files in DB__
+‣ /repairmode - __Enable or disable repair mode - If on, bot will not send any files__
+‣ /adminsettings - __Get current admin settings__
 """
+
+UTIL_HLP_MSG = """
+>**Utility Commands**
+>__Access bot logs, server stats, restart the bot, get user and file counts, send broadcasts, and more.__
+
+‣ /logs - __Get logs as a file__
+‣ /server - __Get server stats__
+‣ /restart - __Restart the bot__
+‣ /stats - __Get bot user stats (Will send only after checking active users__
+‣ /broadcast - __Reply to a message to send that to all bot users__
+‣ /total - __Get count of total files in DB__
+"""
+
 
 REMOVE_WORDS = [
     "[MCU]", "@WMR", "Dramaost", "@R A R B G", "AMZN", "WEBDL", "WEB DL", "DVDRip", "HDRip", "HDTV", 

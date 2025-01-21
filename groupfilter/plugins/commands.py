@@ -14,8 +14,21 @@ from groupfilter import (
     START_MSG,
     HELP_MSG,
     START_KB,
-    HELP_KB,
     PM_SUPPORT,
+)
+from sample_const import (
+    HELP_MOD_KB,
+    PROMO_HLP_MSG,
+    FSUB_HLP_MSG,
+    FLTR_HLP_MSG,
+    BAN_HLP_MSG,
+    CUST_MSG_HLP_MSG,
+    CAP_HLP_MSG,
+    DEL_HLP_MSG,
+    INDX_HLP_MSG,
+    SET_HLP_MSG,
+    UTIL_HLP_MSG,
+    HELP_BK_KB,
 )
 from groupfilter.utils.util_support import humanbytes, get_db_size
 from groupfilter.plugins.serve import get_files, scheduler
@@ -76,8 +89,33 @@ async def help_m(bot, update):
         chat_id=update.chat.id,
         text=help_msg,
         reply_to_message_id=update.reply_to_message_id,
-        reply_markup=HELP_KB,
+        reply_markup=HELP_MOD_KB,
     )
+
+
+@Client.on_callback_query(filters.regex(r"^hlp_(.+)$"))
+async def help_mod(bot, query):
+    mod = query.data.split("_")[1]
+    if mod == "promo":
+        await query.message.edit_text(PROMO_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "fsub":
+        await query.message.edit_text(FSUB_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "fltr":
+        await query.message.edit_text(FLTR_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "ban":
+        await query.message.edit_text(BAN_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "cstmsg":
+        await query.message.edit_text(CUST_MSG_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "ccptn":
+        await query.message.edit_text(CAP_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "del":
+        await query.message.edit_text(DEL_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "indx":
+        await query.message.edit_text(INDX_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "sets":
+        await query.message.edit_text(SET_HLP_MSG, reply_markup=HELP_BK_KB)
+    elif mod == "utls":
+        await query.message.edit_text(UTIL_HLP_MSG, reply_markup=HELP_BK_KB)
 
 
 @Client.on_callback_query(filters.regex(r"^back_m$"))
@@ -102,7 +140,12 @@ async def help_cb(bot, query):
     except Exception as e:
         LOGGER.warning(e)
         help_msg = HELPMSG
-    await query.message.edit_text(help_msg, reply_markup=HELP_KB)
+    await query.message.edit_text(help_msg, reply_markup=HELP_MOD_KB)
+
+
+@Client.on_callback_query(filters.regex(r"^helpmod_cb$"))
+async def help_mod_cb(bot, query):
+    await query.message.edit_text(HELP_MSG, reply_markup=HELP_MOD_KB)
 
 
 @Client.on_message(filters.command(["restart"]) & filters.user(ADMINS))
