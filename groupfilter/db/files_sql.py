@@ -158,20 +158,16 @@ async def get_filter_results(query, page=1, per_page=10):
             #     conditions = [Files.file_name.ilike(f"%{term}%") for term in search]
             # else:
             conditions = [
-                Files.search_vector.op("@@")(
-                    func.plainto_tsquery("simple", term)
-                )
+                Files.search_vector.op("@@")(func.plainto_tsquery("simple", term))
                 if len(term) <= 2  # Only use plainto_tsquery for short terms
                 else or_(
-                    Files.search_vector.op("@@")(
-                        func.plainto_tsquery("simple", term)
-                    ),
+                    Files.search_vector.op("@@")(func.plainto_tsquery("simple", term)),
                     Files.search_vector.op("@@")(
                         func.to_tsquery("simple", f"{term}:*")
-                    )
+                    ),
                 )
                 for term in search
-]
+            ]
             combined_condition = and_(*conditions)
             files_query = (
                 SESSION.query(Files)
@@ -255,6 +251,118 @@ async def get_precise_filter_results(query, page=1, per_page=10):
             return result
     except Exception as e:
         LOGGER.warning("Error occurred while retrieving filter results: %s", str(e))
+        return {"files": [], "total_count": 0}
+
+
+async def get_last_results(page=1, per_page=10):
+    key = cache_key("", page, per_page)
+    cached_result = redis_client.get(key)
+    if cached_result:
+        return json.loads(cached_result)
+    try:
+        with INSERTION_LOCK:
+            offset = (page - 1) * per_page
+            files_query = SESSION.query(Files).order_by(Files.id.desc())
+            total_count_query = SESSION.query(func.count(Files.file_id))
+            total_count = total_count_query.scalar()
+            files = files_query.offset(offset).limit(per_page).all()
+
+            result = {
+                "files": [
+                    {
+                        "file_name": file.file_name,
+                        "file_id": file.file_id,
+                        "file_ref": file.file_ref,
+                        "file_size": str(file.file_size),
+                        "file_type": file.file_type,
+                        "mime_type": file.mime_type,
+                        "caption": file.caption,
+                    }
+                    for file in files
+                ],
+                "total_count": total_count,
+            }
+            redis_client.setex(key, 86400, json.dumps(result))
+            return result
+
+    except Exception as e:
+        SESSION.rollback()
+        LOGGER.warning("Error occurred while retrieving last file results: %s", str(e))
+        return {"files": [], "total_count": 0}
+
+
+async def get_inline_filter_results(query, page=1, per_page=10):
+    if not query.strip():
+        return {"files": [], "total_count": 0}
+
+    key = cache_key(query, page, per_page)
+    cached_result = redis_client.get(key)
+    if cached_result:
+        return json.loads(cached_result)
+
+    try:
+        with INSERTION_LOCK:
+            offset = (page - 1) * per_page
+            search = [clean_query(word) for word in query.split() if clean_query(word)]
+            # contains_stop_word = any(word.lower() in STOP_WORDS for word in search)
+            # if contains_stop_word:
+            #     conditions = [Files.file_name.ilike(f"%{term}%") for term in search]
+            # else:
+            #     conditions = [
+            #         Files.search_vector.op("@@")(
+            #             func.to_tsquery(f"{term}" if len(term) <= 1 else f"{term}:*")
+            #         )
+            #         for term in search
+            #     ]
+            conditions = [
+                Files.search_vector.op("@@")(func.plainto_tsquery("simple", term))
+                if len(term) <= 2  # Only use plainto_tsquery for short terms
+                else or_(
+                    Files.search_vector.op("@@")(func.plainto_tsquery("simple", term)),
+                    Files.search_vector.op("@@")(
+                        func.to_tsquery("simple", f"{term}:*")
+                    ),
+                )
+                for term in search
+            ]
+            combined_condition = and_(*conditions)
+            files_query = (
+                SESSION.query(Files)
+                .filter(combined_condition)
+                .order_by(Files.id.desc())
+            )
+            total_count_query = SESSION.query(func.count(Files.file_id)).filter(
+                combined_condition
+            )
+
+            total_count = total_count_query.scalar()
+            files = files_query.offset(offset).limit(per_page).all()
+
+            result = {
+                "files": [
+                    {
+                        "file_name": file.file_name,
+                        "file_id": file.file_id,
+                        "file_ref": file.file_ref,
+                        "file_size": str(file.file_size),
+                        "file_type": file.file_type,
+                        "mime_type": file.mime_type,
+                        "caption": file.caption,
+                    }
+                    for file in files
+                ],
+                "total_count": total_count,
+            }
+            redis_client.setex(key, 86400, json.dumps(result))
+            return result
+
+    except Exception as e:
+        SESSION.rollback()
+        LOGGER.warning(
+            "Error occurred while retrieving filter results: %s : query: %s",
+            str(e),
+            query,
+        )
         return {"files": [], "total_count": 0}
 
 
