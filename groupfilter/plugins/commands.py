@@ -193,3 +193,21 @@ async def server_stats(bot, update):
         await sts.edit(stats_msg)
     except Exception as e:
         await update.reply_text(str(e))
+
+
+@Client.on_message(filters.command(["getfileid"]) & filters.incoming & filters.private)
+async def getfileid(bot, update):
+    msg = update.reply_to_message
+    if msg is None:
+        await update.reply_text("Reply to a file to get its file_id.")
+        return
+    if msg.animation:
+        await update.reply_text(f"File ID: `{msg.animation.file_id}`")
+    elif msg.document:
+        await update.reply_text(f"File ID: `{msg.document.file_id}`")
+    elif msg.video:
+        await update.reply_text(f"File ID: `{msg.video.file_id}`")
+    elif msg.audio:
+        await update.reply_text(f"File ID: `{msg.audio.file_id}`")
+    elif msg.sticker:
+        await update.reply_text(f"File ID: `{msg.sticker.file_id}`")
