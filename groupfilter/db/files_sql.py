@@ -89,6 +89,7 @@ async def save_file(media):
         try:
             file = SESSION.query(Files).filter_by(file_id=file_id).one()
             LOGGER.warning("%s is already saved in the database", media.file_name)
+            return "duplicate"
         except NoResultFound:
             try:
                 file = (
@@ -101,6 +102,7 @@ async def save_file(media):
                     media.file_name,
                     media.file_size,
                 )
+                return "duplicate"
             except NoResultFound:
                 cleaned_fn = clean_text(media.file_name) if media.file_name else ""
                 cleaned_cp = clean_text(media.caption) if media.caption else ""

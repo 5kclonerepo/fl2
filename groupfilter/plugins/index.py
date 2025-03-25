@@ -123,80 +123,114 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
     current = int(start_msg_id)
     counter = 0
     saved = 0
+    dup = 0
+    unsup = 0
     total = last_msg_id + 1
+    processed_groups = set()
 
     async with lock:
         try:
             while current < total:
                 try:
-                    message = await bot.get_messages(
-                        chat_id=chat_id, message_ids=current, replies=0
-                    )
+                    message = await bot.get_messages(chat_id=chat_id, message_ids=current, replies=0)
                 except FloodWait as e:
                     LOGGER.warning("FloodWait while indexing, Error: %s", str(e))
                     await asyncio.sleep(e.value)
-                    message = await bot.get_messages(
-                        chat_id=chat_id, message_ids=current, replies=0
-                    )
+                    continue
                 except asyncio.CancelledError:
                     LOGGER.info("Indexing task was cancelled.")
                     await msg.edit("Indexing process was cancelled.")
                     return
                 except ChannelPrivate as e:
-                    LOGGER.warning(
-                        "Chat is private or bot is not an admin: %s : %s", chat_id, str(e)
-                    )
+                    LOGGER.warning("Chat is private or bot is not an admin: %s : %s", chat_id, str(e))
                     await msg.edit(f"Chat is private or bot is not an admin: {chat_id}\nError: {str(e)}")
                     return
                 except Exception as e:
                     LOGGER.warning("Error occurred while fetching message: %s", str(e))
+                    current += 1
                     continue
 
-                try:
-                    for file_type in ("document", "video", "audio"):
-                        media = getattr(message, file_type, None)
-                        if media:
-                            caption = message.caption
-                            file_name = media.file_name
-                            media.file_type = file_type
-                            media.caption = caption.markdown if caption else clean_text(file_name)
-                            save = await save_file(media)
-                            if save:
-                                saved += 1
-                            total_files += 1
-                            break
-                except Exception as e:
-                    LOGGER.warning("Error occurred while saving file: %s", str(e))
+                if message.empty:
+                    LOGGER.warning("Empty message: Skipping message ID: %s", message.id)
+                    current += 1
+                    continue
 
-                current += 1
-                counter += 1
-                if counter == 200:
+                media_group_id = message.media_group_id
+                if media_group_id and media_group_id not in processed_groups:
+                    processed_groups.add(media_group_id)
+                    try:
+                        messages = await bot.get_media_group(chat_id=chat_id, message_id=message.id)
+                    except Exception as e:
+                        LOGGER.warning("Error fetching media group: %s", str(e))
+                        current += 1
+                        continue
+                    for mssg in messages:
+                        try:
+                            for file_type in ("document", "video", "audio"):
+                                media = getattr(mssg, file_type, None)
+                                if media:
+                                    caption = mssg.caption or ""
+                                    file_name = media.file_name or "Unknown"
+                                    media.file_type = file_type
+                                    media.caption = caption.markdown if caption else clean_text(file_name)
+                                    save = await save_file(media)
+                                    if save:
+                                        if save == "duplicate":
+                                            dup += 1
+                                        else:
+                                            saved += 1
+                                    else:
+                                        unsup += 1
+                                        LOGGER.warning("Unsupported file type: %s, File name: %s", file_type, file_name)
+                                    total_files += 1
+                                    break
+                        except Exception as e:
+                            LOGGER.warning("Error occurred while saving file: %s", str(e))
+                    current += len(messages)
+                    counter += len(messages)
+                else:
+                    try:
+                        for file_type in ("document", "video", "audio"):
+                            media = getattr(message, file_type, None)
+                            if media:
+                                caption = message.caption or ""
+                                file_name = media.file_name or "Unknown"
+                                media.file_type = file_type
+                                media.caption = caption.markdown if caption else clean_text(file_name)
+                                save = await save_file(media)
+                                if save:
+                                    if save == "duplicate":
+                                        dup += 1
+                                    else:
+                                        saved += 1
+                                else:
+                                    unsup += 1
+                                    LOGGER.warning("Unsupported file type: %s, File name: %s", file_type, file_name)
+                                total_files += 1
+                                break
+                    except Exception as e:
+                        LOGGER.warning("Error occurred while saving file: %s", str(e))
+                    current += 1
+                    counter += 1
+
+                if counter >= 200:
                     try:
                         kb = InlineKeyboardMarkup(
                             [
                                 [
-                                    InlineKeyboardButton(
-                                        "Cancel", callback_data="cancel_index"
-                                    ),
+                                    InlineKeyboardButton("Cancel", callback_data="cancel_index"),
                                 ]
                             ]
                         )
                         await msg.edit(
-                            f"Total messages fetched: {current}\nTotal messages processed: {total_files}",
+                            f"Total messages fetched: {current}\nTotal messages processed: {total_files}\nDuplicates: {dup}\nUnsupported: {unsup}",
                             reply_markup=kb,
                         )
-                        LOGGER.info(
-                            "Total messages & files processed: %s : %s",
-                            current,
-                            total_files,
-                        )
+                        LOGGER.info("Total messages & files processed: %s : %s Duplicates: %s Unsupported: %s", current, total_files, dup, unsup)
                     except FloodWait as e:
-                        LOGGER.warning(
-                            "FloodWait while editing count message, sleeping for: %s seconds",
-                            str(e.value),
-                        )
+                        LOGGER.warning("FloodWait while editing count message, sleeping for: %s seconds", str(e.value))
                         await asyncio.sleep(e.value)
-                    counter -= 200
+                    counter -= counter
 
             await clear_cache(bot, mess=False)
         except asyncio.CancelledError:
@@ -206,8 +240,8 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
             LOGGER.exception(e)
             await msg.edit(f"Error while indexing: {e}")
         else:
-            LOGGER.info("Complete: Total files saved: %s", saved)
-            await msg.edit(f"Complete: Total {saved} Files Saved To Database!")
+            LOGGER.info("Indexing Complete: Total files saved: %s Duplicates: %s Unsupported: %s", saved, dup, unsup)
+            await msg.edit(f"**Indexing Complete:**\n**Saved Files:** `{saved}`\n**Duplicates:** `{dup}`\n**Unsupported:** `{unsup}`")
         finally:
             index_task = None
 
