@@ -13,7 +13,7 @@ from groupfilter.db.settings_sql import get_admin_settings
 from groupfilter.db.ban_sql import is_banned
 # from groupfilter.utils.helpers import clean_fname, clean_se
 from groupfilter.plugins.fsub import is_inline_fsub
-from groupfilter import LOGGER
+from groupfilter import LOGGER, INLINE_ADMIN_ONLY, ADMINS
 
 
 @Client.on_inline_query()
@@ -23,6 +23,10 @@ async def answer(bot, query):
     mention = query.from_user.mention(style=ParseMode.MARKDOWN)
     string = query.query.strip()
     offset = query.offset
+
+    if INLINE_ADMIN_ONLY:
+        if user_id not in ADMINS:
+            return
 
     if await is_banned(user_id):
         await query.answer(

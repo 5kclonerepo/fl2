@@ -6,17 +6,21 @@ import asyncio  # noqa
 from pyropatch import pyropatch  # noqa
 from pyrogram import Client, idle, __version__  # noqa
 from pyrogram.raw.all import layer  # noqa
-from groupfilter import APP_ID, API_HASH, BOT_TOKEN, PM_SUPPORT, GROUP_SUPPORT, LOGGER  # noqa
+from groupfilter import APP_ID, API_HASH, BOT_TOKEN, PM_SUPPORT, GROUP_SUPPORT, INLINE_SUPPORT, LOGGER  # noqa
 
 
 app = None
 
-if PM_SUPPORT and GROUP_SUPPORT:
-    plugins = {"root": "groupfilter.plugins"}
-elif PM_SUPPORT and not GROUP_SUPPORT:
-    plugins = {"root": "groupfilter.plugins", "exclude": ["serve"]}
-else:
-    plugins = {"root": "groupfilter.plugins", "exclude": ["serve_pm"]}
+plugins = {"root": "groupfilter.plugins"}
+exc_list = []
+if not GROUP_SUPPORT:
+    exc_list.append("serve")
+if not PM_SUPPORT:
+    exc_list.append("serve_pm")
+if not INLINE_SUPPORT:
+    exc_list.append("serve_inline")
+if exc_list:
+    plugins["exclude"] = exc_list
 
 
 async def main():
