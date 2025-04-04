@@ -230,7 +230,12 @@ async def pages(bot, query):
         except QueryIdInvalid:
             return
         return
-    
+    else:
+        try:            
+            await query.answer("")
+        except QueryIdInvalid:
+            pass
+
     result, btn = await get_result(search, page_no, user_id, username, chat_id)
 
     if result:
@@ -427,7 +432,7 @@ async def get_files(bot, query):
         except QueryIdInvalid:
             try:
                 await query.message.edit_text("Please search again")
-            except MessageNotModified:
+            except (MessageNotModified, MessageIdInvalid):
                 pass
         return
     elif isinstance(query, Message):
