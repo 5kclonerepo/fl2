@@ -225,9 +225,12 @@ async def pages(bot, query):
     username = me.username
 
     if org_user_id != user_id:
-        await query.answer(text="Not your button")
+        try:            
+            await query.answer(text="Not your button")
+        except QueryIdInvalid:
+            return
         return
-
+    
     result, btn = await get_result(search, page_no, user_id, username, chat_id)
 
     if result:
@@ -310,6 +313,8 @@ async def get_result(search, page_no, user_id, username, chat_id):
         for file in files["files"]:
             file_id = file["file_id"]
             file_name = file["file_name"]
+            if not file_name:
+                continue
             file_name = clean_fname(file_name)
             file_name = clean_se(file_name)
             file_size = get_size(file["file_size"])
@@ -408,7 +413,10 @@ async def get_files(bot, query):
         org_user_id = query.data.split("#")[2]
         # chat_id = query.data.split("#")[3]
         if int(org_user_id) != int(user_id):
-            await query.answer(text="Not your button")
+            try:            
+                await query.answer(text="Not your button")
+            except QueryIdInvalid:
+                return
             return
         file_id = query.data.split("#")[1]
         b_username = bot.me.username
