@@ -66,17 +66,18 @@ async def filter_(bot, message, search=None):
                 pass
             try:
                 await bot.leave_chat(message.chat.id)
+                LOGGER.info("Left unauthorized chat: %s", message.chat.id)
             except Exception:
                 LOGGER.warning("Failed to leave chat: %s", message.chat.id)
-            for admin in ADMINS:
-                try:
-                    await bot.send_message(
-                        admin,
-                        f"Left unauthorized chat.\nID:{message.chat.id}\nName: {message.chat.title}",
-                        disable_notification=True,
-                    )
-                except Exception:
-                    pass
+            # for admin in ADMINS:
+            #     try:
+            #         await bot.send_message(
+            #             admin,
+            #             f"Left unauthorized chat.\nID:{message.chat.id}\nName: {message.chat.title}",
+            #             disable_notification=True,
+            #         )
+            #     except Exception:
+            #         pass
 
     user_id = message.from_user.id
     chat_id = message.chat.id
