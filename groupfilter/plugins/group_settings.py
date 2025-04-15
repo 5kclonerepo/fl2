@@ -48,6 +48,10 @@ async def set_list_mode(bot, query):
     if not is_admin(user_id):
         query.answer(text="You are not allowed to use this command.", show_alert=True)
         return
+    try:
+        await query.answer("")
+    except Exception:
+        pass
     group_id = query.message.chat.id
     result_mode = query.data.split()[1]
     if result_mode == "btnn":

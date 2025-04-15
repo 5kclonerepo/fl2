@@ -18,22 +18,29 @@ if not PM_SUPPORT:
     @Client.on_callback_query(filters.regex(r"^pmfile#(.+)$"))
     async def get_pm_files_qry_hndlr(bot, query):
         if not query.message:
-            return
-        if isinstance(query, CallbackQuery):
             try:
-                await query.answer("PM mode is disabled", cache_time=10)
-            except QueryIdInvalid:
-                return
+                await query.answer("")
+            except Exception:
+                pass
+            return
+        try:
+            await query.answer("PM mode is disabled", cache_time=10)
+        except QueryIdInvalid:
+            return
+        
 
     @Client.on_callback_query(filters.regex(r"^(nxt_pgg|prev_pgg) \d+ \d+ .+$"))
     async def pages_pm_qry_hndlr(bot, query):
         if not query.message:
-            return
-        if isinstance(query, CallbackQuery):
             try:
-                await query.answer("PM mode is disabled", cache_time=10)
-            except QueryIdInvalid:
-                return
+                await query.answer("")
+            except Exception:
+                pass
+            return
+        try:
+            await query.answer("PM mode is disabled", cache_time=10)
+        except QueryIdInvalid:
+            return
 
 
 if not GROUP_SUPPORT:
@@ -41,19 +48,25 @@ if not GROUP_SUPPORT:
     @Client.on_callback_query(filters.regex(r"^file#(.+)#(\d+)$"))
     async def get_files_qry_hndlr(bot, query):
         if not query.message:
-            return
-        if isinstance(query, CallbackQuery):
             try:
-                await query.answer("Group mode is disabled", cache_time=10)
-            except QueryIdInvalid:
-                return
+                await query.answer("")
+            except Exception:
+                pass
+            return
+        try:
+            await query.answer("Group mode is disabled", cache_time=10)
+        except QueryIdInvalid:
+            return
 
     @Client.on_callback_query(filters.regex(r"^(nxt_pg|prev_pg) \d+ \d+ .+$"))
     async def pages_qry_hndlr(bot, query):
         if not query.message:
-            return
-        if isinstance(query, CallbackQuery):
             try:
-                await query.answer("Group mode is disabled", cache_time=10)
-            except QueryIdInvalid:
-                return
+                await query.answer("")
+            except Exception:
+                pass
+            return
+        try:
+            await query.answer("Group mode is disabled", cache_time=10)
+        except QueryIdInvalid:
+            return

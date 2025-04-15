@@ -97,6 +97,10 @@ async def help_m(bot, update):
 
 @Client.on_callback_query(filters.regex(r"^hlp_(.+)$"))
 async def help_mod(bot, query):
+    try:
+        await query.answer("")
+    except Exception:
+        pass
     mod = query.data.split("_")[1]
     if mod == "promo":
         await query.message.edit_text(PROMO_HLP_MSG, reply_markup=HELP_BK_KB)
@@ -122,6 +126,10 @@ async def help_mod(bot, query):
 
 @Client.on_callback_query(filters.regex(r"^back_m$"))
 async def back(bot, query):
+    try:
+        await query.answer("")
+    except Exception:
+        pass
     user_id = query.from_user.id
     name = query.from_user.first_name if query.from_user.first_name else " "
     try:
@@ -138,6 +146,10 @@ async def back(bot, query):
 @Client.on_callback_query(filters.regex(r"^help_cb$"))
 async def help_cb(bot, query):
     try:
+        await query.answer("")
+    except Exception:
+        pass
+    try:
         help_msg = HELP_MSG
     except Exception as e:
         LOGGER.warning(e)
@@ -147,6 +159,10 @@ async def help_cb(bot, query):
 
 @Client.on_callback_query(filters.regex(r"^helpmod_cb$"))
 async def help_mod_cb(bot, query):
+    try:
+        await query.answer("")
+    except Exception:
+        pass
     await query.message.edit_text(HELP_MSG, reply_markup=HELP_MOD_KB)
 
 

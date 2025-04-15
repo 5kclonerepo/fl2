@@ -194,6 +194,11 @@ async def pages(bot, query):
     if org_user_id != user_id:
         await query.answer(text="Not your button")
         return
+    else:
+        try:
+            await query.answer("")
+        except Exception:
+            pass
 
     result, btn = await get_pm_result(search, page_no, user_id, username, chat_id)
 

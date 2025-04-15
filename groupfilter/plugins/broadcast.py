@@ -166,6 +166,10 @@ async def brd_cncl(bot, query):
         LOGGER.info("User requested cancellation of broadcasting.. : %s", user_id)
     else:
         await query.message.edit("No active broadcast process to cancel.")
+    try:
+        await query.answer("")
+    except Exception:
+        pass
 
 
 async def users_info(bot):

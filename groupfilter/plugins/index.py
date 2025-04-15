@@ -93,6 +93,10 @@ async def manual_index(bot, message):
 
 @Client.on_callback_query(filters.regex(r"^index -?\d+ \d+ \d+"))
 async def start_index(bot, query):
+    try:
+        await query.answer("")
+    except Exception:
+        pass
     global index_task
     user_id = query.from_user.id
     chat_id, start_msg_id, last_msg_id = map(int, query.data.split()[1:])
@@ -248,6 +252,10 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
 
 @Client.on_callback_query(filters.regex(r"^cancel_index"))
 async def cancel_indexing(bot, query):
+    try:
+        await query.answer("")
+    except Exception:
+        pass
     global index_task
     user_id = query.from_user.id
     if index_task and not index_task.done():
@@ -290,6 +298,10 @@ async def delete_files(bot, message):
 
 @Client.on_callback_query(filters.regex(r"^can-index$"))
 async def cancel_index(bot, query):
+    try:
+        await query.answer("")
+    except Exception:
+        pass
     await query.message.delete()
 
 
