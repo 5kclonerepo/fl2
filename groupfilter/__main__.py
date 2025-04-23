@@ -31,6 +31,7 @@ async def main():
         api_hash=API_HASH,
         bot_token=BOT_TOKEN,
         plugins=plugins,
+        workers=500,
     )
     async with app:
         me = await app.get_me()
