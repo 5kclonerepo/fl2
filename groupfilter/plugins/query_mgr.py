@@ -70,3 +70,16 @@ if not GROUP_SUPPORT:
             await query.answer("Group mode is disabled", cache_time=10)
         except QueryIdInvalid:
             return
+
+
+@Client.on_callback_query()
+async def general_callback_handler(bot, query):
+    chat_info = f"{query.message.chat.id} | {query.message.chat.title}" if query.message and hasattr(query.message, 'chat') else "Unknown chat"
+    LOGGER.debug(
+        f"General handler received callback from {query.from_user.id} | {query.from_user.first_name} | Chat: {chat_info} | Data: {query.data}"
+    )
+    try:
+        await query.answer()
+        LOGGER.debug(f"Successfully answered callback query: {query.id}")
+    except Exception as e:
+        LOGGER.error(f"Error acknowledging callback {query.id}: {e}")

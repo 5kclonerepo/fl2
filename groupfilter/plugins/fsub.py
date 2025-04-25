@@ -762,3 +762,21 @@ async def get_inline_fsub(bot, update):
             "Something went wrong, please contact my support group", quote=True
         )
         return
+
+
+# Add the missing callback handlers for the force subscription buttons
+@Client.on_callback_query(filters.regex(r"^cfs_(req|reg)$"))
+async def handle_fsub_type_cb(bot, query):
+    await query.answer()
+
+@Client.on_callback_query(filters.regex(r"^lim_(yes|no)$"))
+async def handle_fsub_limit_cb(bot, query):
+    await query.answer()
+
+@Client.on_callback_query(filters.regex(r"^ena_(yes|no)$"))
+async def handle_fsub_enable_cb(bot, query):
+    await query.answer()
+
+@Client.on_callback_query(filters.regex(r"^rm_all_(yes|no)$"))
+async def handle_rm_all_fsub_cb(bot, query):
+    await query.answer()
