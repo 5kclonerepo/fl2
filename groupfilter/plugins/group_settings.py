@@ -22,7 +22,7 @@ async def set_precise_mode(bot, query):
     return
     user_id = query.from_user.id
     if not is_admin(user_id):
-        query.answer(text="You are not allowed to use this command.", show_alert=True)
+        await query.answer(text="You are not allowed to use this command.", show_alert=True)
         return
     group_id = query.chat.id
     prsc_mode = query.data.split()[1]
