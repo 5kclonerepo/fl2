@@ -514,20 +514,27 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
     try:
         if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
             if DELIVERY_CHANNELS:
+                delcn = DELIVERY_CHANNELS[DELIVERY]
                 usr_msg = await bot.send_cached_media(
-                    chat_id=DELIVERY_CHANNELS[DELIVERY],
+                    chat_id=delcn,
                     file_id=file_id,
                     caption=f_caption,
                     parse_mode=ParseMode.MARKDOWN,
                 )
                 from_channel = usr_msg.chat.id
                 msg_id = usr_msg.id
-                channel_link_id = str(from_channel).replace("-100", "", 1)
+                try:
+                    clink = int(delcn)
+                    channel_link_id = str(clink).replace("-100", "", 1)
+                    url=f"t.me/c/{channel_link_id}/{msg_id}"
+                except Exception:
+                    channel_link = delcn
+                    url=f"t.me/{channel_link}/{msg_id}"
                 link_kb = InlineKeyboardMarkup(
                     [
                         [
                             InlineKeyboardButton(
-                                "Get File", url=f"t.me/c/{channel_link_id}/{msg_id}"
+                                "Get File", url=url
                             )
                         ]
                     ]
@@ -546,20 +553,27 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
                 )
         else:
             if DELIVERY_CHANNELS:
+                delcn = DELIVERY_CHANNELS[DELIVERY]
                 usr_msg = await bot.send_cached_media(
-                    chat_id=DELIVERY_CHANNELS[DELIVERY],
+                    chat_id=delcn,
                     file_id=file_id,
                     caption=f_caption,
                     parse_mode=ParseMode.MARKDOWN,
                 )
                 from_channel = usr_msg.chat.id
                 msg_id = usr_msg.id
-                channel_link_id = str(from_channel).replace("-100", "", 1)
+                try:
+                    clink = int(delcn)
+                    channel_link_id = str(clink).replace("-100", "", 1)
+                    url=f"t.me/c/{channel_link_id}/{msg_id}"
+                except Exception:
+                    channel_link = delcn
+                    url=f"t.me/{channel_link}/{msg_id}"
                 link_kb = InlineKeyboardMarkup(
                     [
                         [
                             InlineKeyboardButton(
-                                "Get File", url=f"t.me/c/{channel_link_id}/{msg_id}"
+                                "Get File", url=url
                             )
                         ]
                     ]
