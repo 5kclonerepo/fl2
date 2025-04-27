@@ -1,5 +1,6 @@
 import json
 from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from groupfilter.db.settings_sql import (
     get_admin_settings,
     set_repair_mode,
@@ -19,7 +20,7 @@ from groupfilter.db.settings_sql import (
 )
 from groupfilter.db.ban_sql import is_banned, ban_user, unban_user
 from groupfilter.db.filters_sql import add_filter, rem_filter, list_filters
-from groupfilter.db.files_sql import count_files
+from groupfilter.db.files_sql import count_files, clear_files
 from groupfilter.db.broadcast_sql import count_users
 from groupfilter import ADMINS, DB_CHANNELS
 
@@ -624,3 +625,35 @@ async def set_fsub_count_(bot, update):
 
     else:
         await update.reply_text("Please send in proper format `/setfsubcount count`")
+
+
+@Client.on_message(filters.private & filters.command(["clearfiles"]) & filters.user(ADMINS))
+async def clear_files_(bot, update):
+    clear_ms = await update.reply_text(
+        "Please conifirm that you want to remove all files",
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("✅ Yes", callback_data="clear_files_yes"),
+                    InlineKeyboardButton("❌ No", callback_data="clear_files_no"),
+                ]
+            ]
+        ),
+    )
+    try:
+        clear_cb = await bot.listen_callback(update.chat.id, clear_ms.id, timeout=300)
+    except TimeoutError:
+        await clear_ms.reply_text("Request timed out, please /start again.", quote=True)
+        return
+    if clear_cb.data == "clear_files_no":
+        await clear_ms.edit_text("Operation Cancelled")
+        return
+    
+    await clear_ms.delete()    
+    await clear_files()
+    await update.reply_text("All files deleted successfully")
+
+
+@Client.on_callback_query(filters.regex(r"^clear_files_(yes|no)$"))
+async def clear_files_cb(bot, query):
+    await query.answer()

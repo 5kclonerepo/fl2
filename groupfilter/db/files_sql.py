@@ -698,3 +698,12 @@ async def delete_files_by_name(search_term):
             else:
                 raise
     return 0, 0
+
+
+async def clear_files():
+    try:
+        with INSERTION_LOCK:
+            SESSION.query(Files).delete()
+            SESSION.commit()
+    except Exception as e:
+        LOGGER.warning("Error occurred while clearing files: %s", str(e))

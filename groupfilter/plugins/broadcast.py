@@ -7,7 +7,7 @@ from pyrogram.enums import ChatAction
 from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from groupfilter import LOGGER
-from groupfilter.db.broadcast_sql import get_users, del_user, count_users
+from groupfilter.db.broadcast_sql import get_users, del_user, count_users, clear_users
 from groupfilter import ADMINS, OWNER_ID
 
 lock = asyncio.Lock()
@@ -177,6 +177,31 @@ async def brd_cncl(bot, query):
         pass
 
 
+@Client.on_message(filters.private & filters.command("clearusers") & filters.user(ADMINS))
+async def clear_users_(bot, update):
+    clear_ms = await update.reply_text( 
+        "Please conifirm that you want to remove all users",
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("✅ Yes", callback_data="clear_users_yes"), 
+                 InlineKeyboardButton("❌ No", callback_data="clear_users_no")]
+            ]
+        ),
+    )
+    try:
+        clear_cb = await bot.listen_callback(update.chat.id, clear_ms.id, timeout=300)
+    except TimeoutError:
+        await clear_ms.reply_text("Request timed out, please /start again.", quote=True)
+        return
+    if clear_cb.data == "clear_users_no":
+        await clear_ms.edit_text("Operation Cancelled")
+        return
+    
+    await clear_ms.delete()
+    await clear_users()
+    await update.reply_text("All users deleted successfully")
+
+
 async def users_info(bot):
     users = 0
     blocked = 0
@@ -198,3 +223,8 @@ async def users_info(bot):
             LOGGER.info("Deleted inactive user id %s from broadcast list", user_id)
             blocked += 1
     return users, blocked, sts_list
+
+
+@Client.on_callback_query(filters.regex(r"^clear_users_(yes|no)$"))
+async def clear_users_cb(bot, query):
+    await query.answer()

@@ -118,3 +118,12 @@ async def count_users():
     except Exception as e:
         LOGGER.error("Error counting users: %s", str(e))
         return 0
+
+
+async def clear_users():
+    try:
+        with INSERTION_LOCK:
+            SESSION.query(Broadcast).delete()
+            SESSION.commit()
+    except Exception as e:
+        LOGGER.warning("Error occurred while clearing users: %s", str(e))

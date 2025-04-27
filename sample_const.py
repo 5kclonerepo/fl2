@@ -185,6 +185,9 @@ UTIL_HLP_MSG = """
 ‣ /stats - __Get bot user stats (Will send only after checking active users__
 ‣ /broadcast - __Reply to a message to send that to all bot users__
 ‣ /total - __Get count of total files in DB__
+‣ /clearfiles - __Clear all files from DB__
+‣ /clearusers - __Clear all users from DB__
+‣ /clearfsubusers - __Clear all force subscribe users from db__
 """
 
 
