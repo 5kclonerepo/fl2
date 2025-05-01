@@ -515,12 +515,23 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
         if isinstance(query, (ChatJoinRequest, ChatMemberUpdated)):
             if DELIVERY_CHANNELS:
                 delcn = DELIVERY_CHANNELS[DELIVERY]
-                usr_msg = await bot.send_cached_media(
-                    chat_id=delcn,
-                    file_id=file_id,
-                    caption=f_caption,
-                    parse_mode=ParseMode.MARKDOWN,
-                )
+                try:
+                    usr_msg = await bot.send_cached_media(
+                        chat_id=delcn,
+                        file_id=file_id,
+                        caption=f_caption,
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
+                except Exception as e:
+                    LOGGER.warning("Error occurred while sending file: %s : Channel - %s", str(e), delcn)
+                    DELIVERY += 1
+                    delcn = DELIVERY_CHANNELS[DELIVERY]
+                    usr_msg = await bot.send_cached_media(
+                        chat_id=delcn,
+                        file_id=file_id,
+                        caption=f_caption,
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
                 from_channel = usr_msg.chat.id
                 msg_id = usr_msg.id
                 try:
@@ -554,12 +565,23 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
         else:
             if DELIVERY_CHANNELS:
                 delcn = DELIVERY_CHANNELS[DELIVERY]
-                usr_msg = await bot.send_cached_media(
-                    chat_id=delcn,
-                    file_id=file_id,
-                    caption=f_caption,
-                    parse_mode=ParseMode.MARKDOWN,
-                )
+                try:
+                    usr_msg = await bot.send_cached_media(
+                        chat_id=delcn,
+                        file_id=file_id,
+                        caption=f_caption,
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
+                except Exception as e:
+                    LOGGER.warning("Error occurred while sending file: %s : Channel - %s", str(e), delcn)
+                    DELIVERY += 1
+                    delcn = DELIVERY_CHANNELS[DELIVERY]
+                    usr_msg = await bot.send_cached_media(
+                        chat_id=delcn,
+                        file_id=file_id,
+                        caption=f_caption,
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
                 from_channel = usr_msg.chat.id
                 msg_id = usr_msg.id
                 try:
