@@ -8,13 +8,15 @@ from sqlalchemy import Column, TEXT, Numeric, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
-
+from sqlalchemy.pool import QueuePool
 # from sqlalchemy.pool import StaticPool
 from groupfilter import DB_URL, LOGGER, BOT_TOKEN
 from groupfilter.utils.helpers import unpack_new_file_id
 from sqlalchemy import Index
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from groupfilter.db.redis import NamespacedRedis
+import inspect
+from contextlib import contextmanager
 
 BASE = declarative_base()
 executor = ThreadPoolExecutor(max_workers=10)
@@ -80,17 +82,17 @@ def start() -> scoped_session:
     engine = create_engine(
         DB_URL,
         client_encoding="utf8",
-        pool_size=10,
-        max_overflow=20,
-        pool_timeout=30,
+        poolclass=QueuePool,
+        pool_size=20,
+        max_overflow=50,
+        pool_timeout=10,
         pool_recycle=1800,
-        echo=False,
+        pool_pre_ping=True,
+        pool_use_lifo=True,
     )
     BASE.metadata.bind = engine
-    
     # You can skip this after initial DB setup
     BASE.metadata.create_all(engine)
-    
     return scoped_session(sessionmaker(bind=engine, autoflush=False))
 
 
@@ -371,7 +373,17 @@ async def get_file_details(file_id):
     try:
         with INSERTION_LOCK:
             file_details = SESSION.query(Files).filter_by(file_id=file_id).all()
-            return file_details
+            return [
+                {
+                    "file_name": file_details.file_name,
+                    "file_id": file_details.file_id,
+                    "file_ref": file_details.file_ref,
+                    "file_size": file_details.file_size,
+                    "file_type": file_details.file_type,
+                    "caption": file_details.caption,
+                }
+                for file_details in file_details
+            ]
     except Exception as e:
         LOGGER.warning("Error occurred while retrieving file details: %s", str(e))
         return []
@@ -412,3 +424,18 @@ def clean_query(query):
     clean = re.sub(r"[&|!()<>:*._]", "", query)
     clean = re.sub(r"^[\'\"]+", "", clean)
     return clean
+
+
+@contextmanager
+def session_scope():
+    try:
+        yield SESSION
+        SESSION.commit()
+    except Exception as e:
+        SESSION.rollback()
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name if caller_frame else "unknown"
+        LOGGER.error("Database error occurred in function '%s': %s", caller_name, str(e))
+        raise
+    finally:
+        SESSION.close()

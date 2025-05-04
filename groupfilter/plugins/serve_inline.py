@@ -70,12 +70,12 @@ async def answer(bot, query):
         # file_name = clean_se(file_name)
         size = get_size(file["file_size"])
         f_caption = file["caption"] or file_name
-        if admin_settings.custom_caption:
-            f_caption = admin_settings.custom_caption
+        if admin_settings["custom_caption"]:
+            f_caption = admin_settings["custom_caption"]
         elif f_caption is None:
             f_caption = "<b>" + f"{files.file_name}" + "</b>"
-        if admin_settings.caption_uname:
-            f_caption = f_caption + "\n\n" + admin_settings.caption_uname
+        if admin_settings["caption_uname"]:
+            f_caption = f_caption + "\n\n" + admin_settings["caption_uname"]
             
         f_caption = f_caption.format(file_name=file_name, mention=mention, caption=caption)
         reply_markup = get_reply_markup(string)

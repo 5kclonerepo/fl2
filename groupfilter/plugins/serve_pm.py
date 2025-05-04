@@ -58,15 +58,15 @@ async def filter_pm(bot, message, search=None):
 
     admin_settings = await get_admin_settings()
     if admin_settings:
-        if admin_settings.repair_mode:
+        if admin_settings["repair_mode"]:
             await message.reply_text("Bot is in repair mode.", quote=True)
             return
 
     fltr = await is_filter(message.text)
     if fltr:
         btns = None
-        if fltr.buttons:
-            btn_data = json.loads(fltr.buttons)
+        if fltr["buttons"]:
+            btn_data = json.loads(fltr["buttons"])
             btns = [
                 [
                     InlineKeyboardButton(text=button["text"], url=button["url"])
@@ -77,21 +77,21 @@ async def filter_pm(bot, message, search=None):
             btns = InlineKeyboardMarkup(btns)
         if fltr.media_type == "photo":
             await message.reply_photo(
-                fltr.file_id, caption=fltr.message, reply_markup=btns
+                fltr["file_id"], caption=fltr["message"], reply_markup=btns
             )
-        elif fltr.media_type == "video":
+        elif fltr["media_type"] == "video":
             await message.reply_video(
-                fltr.file_id, caption=fltr.message, reply_markup=btns
+                fltr["file_id"], caption=fltr["message"], reply_markup=btns
             )
-        elif fltr.media_type == "animation":
+        elif fltr["media_type"] == "animation":
             await message.reply_animation(
-                fltr.file_id, caption=fltr.message, reply_markup=btns
+                fltr["file_id"], caption=fltr["message"], reply_markup=btns
             )
-        elif fltr.media_type == "sticker":
-            await message.reply_sticker(fltr.file_id)
-        elif fltr.media_type == "text":
+        elif fltr["media_type"] == "sticker":
+            await message.reply_sticker(fltr["file_id"])
+        elif fltr["media_type"] == "text":
             await message.reply_text(
-                text=fltr.message,
+                text=fltr["message"],
                 quote=True,
                 reply_markup=btns,
                 parse_mode=ParseMode.MARKDOWN,
@@ -142,14 +142,14 @@ async def filter_pm(bot, message, search=None):
                     quote=True,
                 )
         else:
-            if admin_settings.notfound_msg and admin_settings.notfound_img:
+            if admin_settings["notfound_msg"] and admin_settings["notfound_img"]:
                 nf_msg = await message.reply_photo(
-                    photo=admin_settings.notfound_img,
-                    caption=admin_settings.notfound_msg,
+                    photo=admin_settings["notfound_img"],
+                    caption=admin_settings["notfound_msg"],
                     quote=True,
                 )
-            elif admin_settings.notfound_msg and not admin_settings.notfound_img:
-                nf_msg = await message.reply_text(admin_settings.notfound_msg)
+            elif admin_settings["notfound_msg"] and not admin_settings["notfound_img"]:
+                nf_msg = await message.reply_text(admin_settings["notfound_msg"])
             else:
                 msg = "No results found.\nOr retry with the correct spelling 🤐"
                 nf_msg = await message.reply_text(msg)
@@ -163,8 +163,8 @@ async def filter_pm(bot, message, search=None):
     except Exception as e:
         LOGGER.warning("Error occurred while sending message: %s", str(e))
 
-    if admin_settings.btn_del:
-        run_time = datetime.now() + timedelta(seconds=int(admin_settings.btn_del))
+    if admin_settings["btn_del"]:
+        run_time = datetime.now() + timedelta(seconds=int(admin_settings["btn_del"]))
         trigger = DateTrigger(run_date=run_time)
         if btn_msg:
             scheduler.add_job(
@@ -231,14 +231,14 @@ async def pages(bot, query):
             pass
     else:
         admin_settings = await get_admin_settings()
-        if admin_settings.notfound_msg and admin_settings.notfound_img:
+        if admin_settings["notfound_msg"] and admin_settings["notfound_img"]:
             nf_msg = await query.message.reply_photo(
-                photo=admin_settings.notfound_img,
-                caption=admin_settings.notfound_msg,
+                photo=admin_settings["notfound_img"],
+                caption=admin_settings["notfound_msg"],
                 quote=True,
             )
-        elif admin_settings.notfound_msg and not admin_settings.notfound_img:
-            nf_msg = await query.message.reply_text(admin_settings.notfound_msg)
+        elif admin_settings["notfound_msg"] and not admin_settings["notfound_img"]:
+            nf_msg = await query.message.reply_text(admin_settings["notfound_msg"])
         else:
             nf_msg = "No results found.\nOr retry with the correct spelling 🤐"
             await query.message.reply_text(nf_msg)
@@ -249,8 +249,8 @@ async def get_pm_result(search, page_no, user_id, username, chat_id):
     files = await get_filter_results(query=search, page=page_no)
     count = int(files["total_count"])
 
-    button_mode = "ON" if search_settings and search_settings.button_mode else "OFF"
-    link_mode = "ON" if search_settings and search_settings.link_mode else "OFF"
+    button_mode = "ON" if search_settings and search_settings["button_mode"] else "OFF"
+    link_mode = "ON" if search_settings and search_settings["link_mode"] else "OFF"
 
     ads_list = await get_promos()
     if ads_list:
@@ -278,7 +278,7 @@ async def get_pm_result(search, page_no, user_id, username, chat_id):
                 result += "\n" + filename
                 if btn_count == len(files["files"]) // 2 and ads_list:
                     current_ad = ads_list[ad_index]
-                    AD_TEXT = current_ad["btn_txt"]
+                    AD_TEXT = current_ad["text"]
                     AD_URL = current_ad["link"]
                     AD_KB = f"**AD.** [{AD_TEXT}]({AD_URL})"
                     result += "\n" + AD_KB
@@ -293,7 +293,7 @@ async def get_pm_result(search, page_no, user_id, username, chat_id):
                 btn_count += 1
                 if btn_count == len(files["files"]) // 2 and ads_list:
                     current_ad = ads_list[ad_index]
-                    AD_TEXT = current_ad["btn_txt"]
+                    AD_TEXT = current_ad["text"]
                     AD_URL = current_ad["link"]
                     AD_KB = InlineKeyboardButton(text=f"{AD_TEXT}", url=f"{AD_URL}")
                     # ad_index = (ad_index + 1) % len(ads_list)
@@ -382,34 +382,43 @@ async def send_pm_file(admin_settings, bot, query, user_id, file_id, cbq):
     filedetails = await get_file_details(file_id)
     f_caption = ""
     for files in filedetails:
-        f_caption = files.caption
-        if admin_settings.custom_caption:
-            f_caption = admin_settings.custom_caption
-        elif f_caption is None:
-            f_caption = f"{files.file_name}"
+        caption = files["caption"]
+        file_name = files["file_name"]
+        file_size = get_size(files["file_size"])
+        if admin_settings["custom_caption"]:
+            f_caption = admin_settings["custom_caption"]
+        else:
+            f_caption = f"{files['file_name']}"
 
-    if admin_settings.caption_uname:
-        f_caption = f_caption + "\n\n" + admin_settings.caption_uname
+    if admin_settings["caption_uname"]:
+        f_caption = f_caption + "\n\n" + admin_settings["caption_uname"]
+
+    if "{file_name}" in f_caption:
+        f_caption = f_caption.replace("{file_name}", file_name)
+    if "{caption}" in f_caption:
+        f_caption = f_caption.replace("{caption}", caption)
+    if "{file_size}" in f_caption:
+        f_caption = f_caption.replace("{file_size}", file_size)
 
     info = None
-    if admin_settings.info_msg and admin_settings.info_img:
+    if admin_settings["info_msg"] and admin_settings["info_img"]:
         if cbq:
             info = await query.message.reply_photo(
                 chat_id=user_id,
-                photo=admin_settings.info_img,
-                caption=admin_settings.info_msg,
+                photo=admin_settings["info_img"],
+                caption=admin_settings["info_msg"],
             )
         else:
             info = await query.reply_photo(
-                photo=admin_settings.info_img,
-                caption=admin_settings.info_msg,
+                photo=admin_settings["info_img"],
+                caption=admin_settings["info_msg"],
                 quote=True,
             )
-    elif admin_settings.info_msg and not admin_settings.info_img:
+    elif admin_settings["info_msg"] and not admin_settings["info_img"]:
         if cbq:
-            info = await query.message.reply_text(admin_settings.info_msg)
+            info = await query.message.reply_text(admin_settings["info_msg"])
         else:
-            info = await query.reply_text(admin_settings.info_msg)
+            info = await query.reply_text(admin_settings["info_msg"])
 
     try:
         if cbq:
@@ -496,20 +505,20 @@ async def send_pm_file(admin_settings, bot, query, user_id, file_id, cbq):
         await query.answer("Try with new search again", show_alert=True)
         return
 
-    if admin_settings.auto_delete:
+    if admin_settings["auto_delete"]:
         try:
-            delay_dur = admin_settings.auto_delete
+            delay_dur = admin_settings["auto_delete"]
             delay = delay_dur / 60 if delay_dur > 60 else delay_dur
             delay = round(delay, 2)
             minsec = str(delay) + " mins" if delay_dur > 60 else str(delay) + " secs"
-            if admin_settings.del_msg and admin_settings.del_img:
+            if admin_settings["del_msg"] and admin_settings["del_img"]:
                 disc = await msg.reply_photo(
-                    photo=admin_settings.del_img,
-                    caption=admin_settings.del_msg,
+                    photo=admin_settings["del_img"],
+                    caption=admin_settings["del_msg"],
                     quote=True,
                 )
-            elif admin_settings.del_msg and not admin_settings.del_img:
-                del_msg = admin_settings.del_msg
+            elif admin_settings["del_msg"] and not admin_settings["del_img"]:
+                del_msg = admin_settings["del_msg"]
                 disc = await msg.reply_text(del_msg)
             else:
                 del_msg = f"Please save the file to your saved messages, it will be deleted in {minsec}"

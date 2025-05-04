@@ -65,6 +65,6 @@ async def list_promo(bot, message):
     count = 0
     for ad in ads_list:
         count += 1
-        msg += f"{count}.  Button: `{ad['btn_txt']}`\n   Link: `{ad['link']}`\n\n"
+        msg += f"{count}.  Button: `{ad['text']}`\n   Link: `{ad['link']}`\n\n"
 
     await message.reply_text(msg)

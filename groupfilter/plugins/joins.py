@@ -21,11 +21,11 @@ async def new_join_req(bot, update):
     user_id = update.from_user.id
     fsub = await get_force_sub(curr_chat_id)
     if fsub:
-        if fsub.is_active:
+        if fsub["is_active"]:
             admin_settings = await get_admin_settings()
-            link = fsub.chat_link
-            join_count = fsub.join_count
-            target = fsub.target
+            link = fsub["chat_link"]
+            join_count = fsub["join_count"]
+            target = fsub["target"]
             if update.invite_link and link == update.invite_link.invite_link:
                 user_det = await is_req_user(int(user_id), int(curr_chat_id))
                 if user_det:
@@ -36,8 +36,8 @@ async def new_join_req(bot, update):
                     LOGGER.debug(
                         f"Req: {curr_chat_id} : {user_id} : {join_count} : {link} : {update.invite_link.pending_join_request_count}"
                     )
-                    file_id = user_det.fileid
-                    msg_id = user_det.msg_id
+                    file_id = user_det["fileid"]
+                    msg_id = user_det["msg_id"]
                     if file_id and file_id != "fsub":
                         await send_file(admin_settings, bot, update, user_id, file_id)
                     try:
@@ -58,11 +58,11 @@ async def new_joins(bot, update):
     curr_chat_id = update.chat.id
     fsub = await get_force_sub(curr_chat_id)
     if fsub:
-        if fsub.is_active:
+        if fsub["is_active"]:
             admin_settings = await get_admin_settings()
-            link = fsub.chat_link
-            join_count = fsub.join_count
-            target = fsub.target
+            link = fsub["chat_link"]
+            join_count = fsub["join_count"]
+            target = fsub["target"]
             if update.invite_link and link == update.invite_link.invite_link:
                 user_det = await is_reg_user(int(user_id), int(curr_chat_id))
                 if user_det:
@@ -73,8 +73,8 @@ async def new_joins(bot, update):
                     LOGGER.debug(
                         f"Join: {curr_chat_id} : {user_id} : {join_count} : {link}"
                     )
-                    file_id = user_det.fileid
-                    msg_id = user_det.msg_id
+                    file_id = user_det["fileid"]
+                    msg_id = user_det["msg_id"]
                     if file_id and file_id != "fsub":
                         await send_file(admin_settings, bot, update, user_id, file_id)
                     try:
@@ -112,17 +112,17 @@ async def process_pending_fsub(bot):
     actfsubcount = await get_act_force_subs_count()
     admin_settings = await get_admin_settings()
     if admin_settings:
-        if admin_settings.fsub_channel:
+        if admin_settings["fsub_channel"]:
             if actfsubcount:
-                if actfsubcount >= admin_settings.fsub_channel:
+                if actfsubcount >= admin_settings["fsub_channel"]:
                     return False
 
     if penfsub:
-        await update_force_sub(chat_id=penfsub.chat_id, is_active=True, is_queue=False)
+        await update_force_sub(chat_id=penfsub["chat_id"], is_active=True, is_queue=False)
         LOGGER.info(
             "Force Sub channel %s has been added to active list.",
-            penfsub.chat_id,
+            penfsub["chat_id"],
         )
-        msg = f"\n>**Force Sub Auto Added From Queue:**\n**Chat ID:** `{penfsub.chat_id}`\n**Name:** `{penfsub.chat_title}`\n**Link:** {penfsub.chat_link}\n**Join Request:** `{penfsub.is_req}`\n**Target:** `{penfsub.target}`"
+        msg = f"\n>**Force Sub Auto Added From Queue:**\n**Chat ID:** `{penfsub['chat_id']}`\n**Name:** `{penfsub['chat_title']}`\n**Link:** {penfsub['chat_link']}\n**Join Request:** `{penfsub['is_req']}`\n**Target:** `{penfsub['target']}`"
         await notify_admins(bot, msg)
         return True

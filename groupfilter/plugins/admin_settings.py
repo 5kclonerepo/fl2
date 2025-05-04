@@ -74,19 +74,19 @@ async def repair_mode_(bot, update):
 async def admin_settings_(bot, update):
     user_id = update.from_user.id
     admin_settings = await get_admin_settings()
-    auto_delete = admin_settings.auto_delete
-    custom_caption = admin_settings.custom_caption
-    caption_uname = admin_settings.caption_uname
-    repair_mode = admin_settings.repair_mode
-    info_msg = admin_settings.info_msg
-    info_img = admin_settings.info_img
-    del_msg = admin_settings.del_msg
-    del_img = admin_settings.del_img
-    notfound_msg = admin_settings.notfound_msg
-    notfound_img = admin_settings.notfound_img
-    fsub_msg = admin_settings.fsub_msg
-    fsub_img = admin_settings.fsub_img
-    btn_del = admin_settings.btn_del
+    auto_delete = admin_settings["auto_delete"]
+    custom_caption = admin_settings["custom_caption"]
+    caption_uname = admin_settings["caption_uname"]
+    repair_mode = admin_settings["repair_mode"]
+    info_msg = admin_settings["info_msg"]
+    info_img = admin_settings["info_img"]
+    del_msg = admin_settings["del_msg"]
+    del_img = admin_settings["del_img"]
+    notfound_msg = admin_settings["notfound_msg"]
+    notfound_img = admin_settings["notfound_img"]
+    fsub_msg = admin_settings["fsub_msg"]
+    fsub_img = admin_settings["fsub_img"]
+    btn_del = admin_settings["btn_del"]
 
     admins = ""
     dbchannel = ""

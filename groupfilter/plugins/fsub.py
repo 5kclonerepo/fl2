@@ -278,11 +278,11 @@ async def get_all_fsub(bot, message):
         comp = "**✧ Completed:-**\n"
         for sub in all_sub:
             if sub.is_done:
-                comp += f">✧ **Chat ID:**`{sub.chat_id}`\n>**Name:** `{sub.chat_title}`\n>**Link:** {sub.chat_link}\n>**Join Request:** `{sub.is_req}`\n>**Joins:** `{sub.join_count}`\n>**Target:** `{sub.target}`\n>**Remove:** `/rmfsub {sub.chat_id}`\n\n"
+                comp += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
             if sub.is_queue:
-                que += f">✧ **Chat ID:**`{sub.chat_id}`\n>**Name:** `{sub.chat_title}`\n>**Link:** {sub.chat_link}\n>**Join Request:** `{sub.is_req}`\n>**Joins:** `{sub.join_count}`\n>**Target:** `{sub.target}`\n>**Remove:** `/rmfsub {sub.chat_id}`\n\n"
+                que += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
             if sub.is_active:
-                active += f">✧ **Chat ID:**`{sub.chat_id}`\n>**Name:** `{sub.chat_title}`\n>**Link:** {sub.chat_link}\n>**Join Request:** `{sub.is_req}`\n>**Joins:** `{sub.join_count}`\n>**Target:** `{sub.target}`\n>**Remove:** `/rmfsub {sub.chat_id}`\n\n"
+                active += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
             msg = active + que + comp
         await message.reply_text(
             msg, quote=True, link_preview_options=LinkPreviewOptions(is_disabled=True)
@@ -301,7 +301,7 @@ async def get_active_fsub(bot, message):
     if all_sub:
         msg = ""
         for sub in all_sub:
-            msg += f">✧ **Chat ID:**`{sub.chat_id}`\n>**Name:** `{sub.chat_title}`\n>**Link:** {sub.chat_link}\n>**Join Request:** `{sub.is_req}`\n>**Joins:** `{sub.join_count}`\n>**Target:** `{sub.target}`\n>**Remove:** `/rmfsub {sub.chat_id}`\n\n"
+            msg += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
         await message.reply_text(
             msg, quote=True, link_preview_options=LinkPreviewOptions(is_disabled=True)
         )
@@ -319,7 +319,7 @@ async def get_pending_fsub(bot, message):
     if all_sub:
         msg = ""
         for sub in all_sub:
-            msg += f">✧ **Chat ID:**`{sub.chat_id}`\n>**Name:** `{sub.chat_title}`\n>**Link:** {sub.chat_link}\n>**Join Request:** `{sub.is_req}`\n>**Joins:** `{sub.join_count}`\n>**Target:** `{sub.target}`\n>**Remove:** `/rmfsub {sub.chat_id}`\n\n"
+            msg += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
         await message.reply_text(
             msg, quote=True, link_preview_options=LinkPreviewOptions(is_disabled=True)
         )
@@ -442,11 +442,11 @@ async def check_fsub_users(bot, message):
     req_count = await get_fsubreq_users_count()
     msg += "**Request Channel:**\n"
     for chat in req_count:
-        msg += f"✧ `{chat.chat_id}`: `{chat.count}`\n"
+        msg += f"✧ `{chat['chat_id']}`: `{chat['count']}`\n"
     reg_count = await get_fsubreg_users_count()
     msg += "\n**Regular Channel:**\n"
     for chat in reg_count:
-        msg += f"✧ `{chat.chat_id}`: `{chat.count}`\n"
+        msg += f"✧ `{chat['chat_id']}`: `{chat['count']}`\n"
     if msg:
         await message.reply_text(msg, quote=True)
     else:
@@ -455,8 +455,8 @@ async def check_fsub_users(bot, message):
 
 async def is_fsub(bot, query, user_id, file_id, admin_settings):
     f_sub = await get_active_force_subs()
-    actfsubcount = await get_act_force_subs_count()
-    fsublimit = admin_settings.fsub_channel or 1
+    actfsubcount = int(await get_act_force_subs_count())
+    fsublimit = int(admin_settings["fsub_channel"]) or 2
 
     if f_sub:
         if actfsubcount < fsublimit:
@@ -487,9 +487,9 @@ async def is_fsub(bot, query, user_id, file_id, admin_settings):
 
 
 async def process_force_sub(bot, query, chats, user_id, file_id, admin_settings):
-    force_sub = chats.chat_id
-    link = chats.chat_link
-    request = chats.is_req
+    force_sub = chats["chat_id"]
+    link = chats["chat_link"]
+    request = chats["is_req"]
     sub_conf = await check_fsub(
         bot,
         query,
@@ -507,11 +507,15 @@ async def process_force_sub(bot, query, chats, user_id, file_id, admin_settings)
 
 async def activate_pending_force_sub(bot, pen_fsub):
     if pen_fsub:
-        await update_force_sub(chat_id=pen_fsub.chat_id, is_active=True, is_queue=False)
-        LOGGER.info(
-            "Force Sub channel %s has been added to active list.", pen_fsub.chat_id
+        await update_force_sub(
+            chat_id=pen_fsub["chat_id"], is_active=True, is_queue=False
         )
-        msg = f"\nForce Sub channel {pen_fsub.chat_id} has been added to active list."
+        LOGGER.info(
+            "Force Sub channel %s has been added to active list.", pen_fsub["chat_id"]
+        )
+        msg = (
+            f"\nForce Sub channel {pen_fsub['chat_id']} has been added to active list."
+        )
         await notify_admins(bot, msg)
         return pen_fsub
 
@@ -525,17 +529,20 @@ async def check_fsub(
         msg = message
 
     if admin_settings:
-        txt = admin_settings.fsub_msg or "**Please join below channel to get file!**"
+        txt = admin_settings["fsub_msg"] or "**Please join below channel to get file!**"
         fsub_img = getattr(admin_settings, "fsub_img", None)
 
     try:
         user = await bot.get_chat_member(int(force_sub), user_id)
         if user.status == ChatMemberStatus.BANNED:
-            await msg.reply_text("Sorry, you are Banned in subscription channel. Please contact admin.", quote=True)
+            await msg.reply_text(
+                "Sorry, you are Banned in subscription channel. Please contact admin.",
+                quote=True,
+            )
             return False
     except UserNotParticipant:
         user_det = await is_req_user(int(user_id), int(force_sub))
-        if user_det and not user_det.fileid:
+        if user_det and not user_det["fileid"]:
             return True
 
         if request:
@@ -545,7 +552,7 @@ async def check_fsub(
 
         kb = InlineKeyboardMarkup([[InlineKeyboardButton(btn_txt, url=link)]])
 
-        if admin_settings and admin_settings.fsub_msg and admin_settings.fsub_img:
+        if admin_settings and admin_settings["fsub_msg"] and admin_settings["fsub_img"]:
             sub_msg = await msg.reply_photo(
                 photo=fsub_img,
                 caption=txt,
@@ -553,7 +560,7 @@ async def check_fsub(
                 parse_mode=ParseMode.MARKDOWN,
                 quote=True,
             )
-        elif admin_settings and admin_settings.fsub_msg:
+        elif admin_settings and admin_settings["fsub_msg"]:
             sub_msg = await msg.reply_text(
                 text=txt,
                 reply_markup=kb,
@@ -582,7 +589,7 @@ async def check_fsub(
 async def is_inline_fsub(bot, query, user_id, admin_settings):
     f_sub = await get_active_force_subs()
     actfsubcount = await get_act_force_subs_count()
-    fsublimit = admin_settings.fsub_channel
+    fsublimit = admin_settings["fsub_channel"]
 
     if f_sub:
         if actfsubcount < fsublimit:
@@ -609,10 +616,10 @@ async def is_inline_fsub(bot, query, user_id, admin_settings):
 
 
 async def process_inline_force_sub(bot, query, chats, user_id):
-    force_sub = chats.chat_id
-    link = chats.chat_link
-    request = chats.is_req
-    s_no = str(chats.id)
+    force_sub = chats["chat_id"]
+    link = chats["chat_link"]
+    request = chats["is_req"]
+    s_no = str(chats["id"])
     sub_conf = await check_inline_fsub(
         bot,
         query,
@@ -691,23 +698,23 @@ async def get_inline_fsub(bot, update):
         f_sub = await get_active_force_subs()
         if f_sub:
             for chats in f_sub:
-                if chats.id == int(cnl):
-                    force_sub = chats.chat_id
-                    link = chats.chat_link
-                    request = chats.is_req
+                if chats["id"] == int(cnl):
+                    force_sub = chats["chat_id"]
+                    link = chats["chat_link"]
+                    request = chats["is_req"]
                     break
         else:
             return
 
         admin_settings = await get_admin_settings()
         if admin_settings:
-            if admin_settings.fsub_msg:
-                fsub_msg = admin_settings.fsub_msg
+            if admin_settings["fsub_msg"]:
+                fsub_msg = admin_settings["fsub_msg"]
                 txt = fsub_msg
             else:
                 txt = "**Please join below channel to use me inline!**"
-            if admin_settings.fsub_img:
-                fsub_img = admin_settings.fsub_img
+            if admin_settings["fsub_img"]:
+                fsub_img = admin_settings["fsub_img"]
             else:
                 fsub_img = None
 
@@ -721,8 +728,8 @@ async def get_inline_fsub(bot, update):
             try:
                 if (
                     admin_settings
-                    and admin_settings.fsub_msg
-                    and admin_settings.fsub_img
+                    and admin_settings["fsub_msg"]
+                    and admin_settings["fsub_img"]
                 ):
                     sub_msg = await msg.reply_photo(
                         photo=fsub_img,
@@ -731,7 +738,7 @@ async def get_inline_fsub(bot, update):
                         parse_mode=ParseMode.MARKDOWN,
                         quote=True,
                     )
-                elif admin_settings and admin_settings.fsub_msg:
+                elif admin_settings and admin_settings["fsub_msg"]:
                     sub_msg = await msg.reply_text(
                         text=txt,
                         reply_markup=kb,
@@ -769,13 +776,16 @@ async def get_inline_fsub(bot, update):
 async def handle_fsub_type_cb(bot, query):
     await query.answer()
 
+
 @Client.on_callback_query(filters.regex(r"^lim_(yes|no)$"))
 async def handle_fsub_limit_cb(bot, query):
     await query.answer()
 
+
 @Client.on_callback_query(filters.regex(r"^ena_(yes|no)$"))
 async def handle_fsub_enable_cb(bot, query):
     await query.answer()
+
 
 @Client.on_callback_query(filters.regex(r"^rm_all_(yes|no)$"))
 async def handle_rm_all_fsub_cb(bot, query):

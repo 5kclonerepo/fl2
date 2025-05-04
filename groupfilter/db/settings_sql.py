@@ -1,11 +1,12 @@
 import threading
+from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy import Column, TEXT, Boolean, Numeric, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.pool import StaticPool
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.pool import QueuePool
 from groupfilter import DB_URL, LOGGER
+import inspect
 
 
 BASE = declarative_base()
@@ -64,7 +65,17 @@ class Settings(BASE):
 
 
 def start() -> scoped_session:
-    engine = create_engine(DB_URL, client_encoding="utf8", poolclass=StaticPool)
+    engine = create_engine(
+        DB_URL,
+        client_encoding="utf8",
+        poolclass=QueuePool,
+        pool_size=20,
+        max_overflow=50,
+        pool_timeout=10,
+        pool_recycle=1800,
+        pool_pre_ping=True,
+        pool_use_lifo=True,
+    )
     BASE.metadata.bind = engine
     BASE.metadata.create_all(engine)
     return scoped_session(sessionmaker(bind=engine, autoflush=False))
@@ -74,13 +85,37 @@ SESSION = start()
 INSERTION_LOCK = threading.RLock()
 
 
+@contextmanager
+def session_scope():
+    try:
+        yield SESSION
+        SESSION.commit()
+    except Exception as e:
+        SESSION.rollback()
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name if caller_frame else "unknown"
+        LOGGER.error("Database error occurred in function '%s': %s", caller_name, str(e))
+        raise
+    finally:
+        SESSION.close()
+
+
 async def get_search_settings(group_id):
     try:
         with INSERTION_LOCK:
-            settings = SESSION.query(Settings).filter_by(group_id=group_id).first()
-            return settings
+            with session_scope() as session:
+                settings = session.query(Settings).filter_by(group_id=group_id).first()
+                if settings:
+                    return {
+                        "group_id": settings.group_id,
+                        "precise_mode": settings.precise_mode,
+                        "button_mode": settings.button_mode,
+                        "link_mode": settings.link_mode,
+                        "list_mode": settings.list_mode
+                    }
+                return None
     except Exception as e:
-        LOGGER.warning("Error getting search settings: %s ", str(e))
+        LOGGER.error("Error getting search settings: %s", str(e))
         return None
 
 
@@ -89,26 +124,26 @@ async def change_search_settings(
 ):
     try:
         with INSERTION_LOCK:
-            settings = SESSION.query(Settings).filter_by(group_id=group_id).first()
-            if settings:
-                if precise_mode is not None:
-                    settings.precise_mode = precise_mode
-                if button_mode is not None:
-                    settings.button_mode = button_mode
-                if link_mode is not None:
-                    settings.link_mode = link_mode
-                if list_mode is not None:
-                    settings.list_mode = list_mode
-            else:
-                new_settings = Settings(
-                    group_id=group_id,
-                    precise_mode=precise_mode,
-                    button_mode=button_mode,
-                    link_mode=link_mode,
-                    list_mode=list_mode,
-                )
-                SESSION.add(new_settings)
-            SESSION.commit()
+            with session_scope() as session:
+                settings = session.query(Settings).filter_by(group_id=group_id).first()
+                if settings:
+                    if precise_mode is not None:
+                        settings.precise_mode = precise_mode
+                    if button_mode is not None:
+                        settings.button_mode = button_mode
+                    if link_mode is not None:
+                        settings.link_mode = link_mode
+                    if list_mode is not None:
+                        settings.list_mode = list_mode
+                else:
+                    new_settings = Settings(
+                        group_id=group_id,
+                        precise_mode=precise_mode,
+                        button_mode=button_mode,
+                        link_mode=link_mode,
+                        list_mode=list_mode,
+                    )
+                    session.add(new_settings)
             return True
     except Exception as e:
         LOGGER.warning("Error changing search settings: %s ", str(e))
@@ -117,33 +152,27 @@ async def change_search_settings(
 async def set_repair_mode(repair_mode):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.repair_mode = repair_mode
-            session.commit()
-
+                admin_setting.repair_mode = repair_mode
     except Exception as e:
-        LOGGER.warning("Error setting repair mode: %s ", str(e))
+        LOGGER.error("Error setting repair mode: %s", str(e))
 
 
 async def set_auto_delete(dur):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.auto_delete = dur
-            session.commit()
-
+                admin_setting.auto_delete = dur
     except Exception as e:
         LOGGER.warning("Error setting auto delete: %s ", str(e))
 
@@ -151,31 +180,44 @@ async def set_auto_delete(dur):
 async def get_admin_settings():
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            return admin_setting
+                return {
+                    "setting_name": admin_setting.setting_name,
+                    "auto_delete": admin_setting.auto_delete,
+                    "custom_caption": admin_setting.custom_caption,
+                    "caption_uname": admin_setting.caption_uname,
+                    "fsub_channel": admin_setting.fsub_channel,
+                    "repair_mode": admin_setting.repair_mode,
+                    "info_msg": admin_setting.info_msg,
+                    "del_msg": admin_setting.del_msg,
+                    "info_img": admin_setting.info_img,
+                    "del_img": admin_setting.del_img,
+                    "notfound_msg": admin_setting.notfound_msg,
+                    "notfound_img": admin_setting.notfound_img,
+                    "fsub_msg": admin_setting.fsub_msg,
+                    "fsub_img": admin_setting.fsub_img,
+                    "btn_del": admin_setting.btn_del
+                }
     except Exception as e:
-        LOGGER.warning("Error getting admin settings: %s", str(e))
+        LOGGER.error("Error getting admin settings: %s", str(e))
+        return None
 
 
 async def set_custom_caption(caption):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.custom_caption = caption
-            session.commit()
-
+                admin_setting.custom_caption = caption
     except Exception as e:
         LOGGER.warning("Error setting custom caption: %s ", str(e))
 
@@ -183,16 +225,13 @@ async def set_custom_caption(caption):
 async def set_captionplus(username):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.caption_uname = username
-            session.commit()
-
+                admin_setting.caption_uname = username
     except Exception as e:
         LOGGER.warning("Error adding username: %s ", str(e))
 
@@ -200,16 +239,13 @@ async def set_captionplus(username):
 async def set_info_msg(message):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.info_msg = message
-            session.commit()
-
+                admin_setting.info_msg = message
     except Exception as e:
         LOGGER.warning("Error setting info message: %s ", str(e))
 
@@ -217,15 +253,13 @@ async def set_info_msg(message):
 async def set_del_msg(message):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.del_msg = message
-            session.commit()
+                admin_setting.del_msg = message
             return True
     except Exception as e:
         LOGGER.warning("Error setting delete message: %s ", str(e))
@@ -234,53 +268,47 @@ async def set_del_msg(message):
 
 async def set_info_img(img_id):
     with INSERTION_LOCK:
-        session = SESSION()
-        try:
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+        with session_scope() as session:
+            try:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.info_img = img_id
-            session.commit()
-            return True
-        except Exception as e:
-            LOGGER.warning("Error setting info image: %s", str(e))
-            return False
+                admin_setting.info_img = img_id
+                return True
+            except Exception as e:
+                LOGGER.warning("Error setting info image: %s", str(e))
+                return False
 
 
 async def set_del_img(img_id):
     with INSERTION_LOCK:
-        session = SESSION()
-        try:
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+        with session_scope() as session:
+            try:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.del_img = img_id
-            session.commit()
-            return True
-        except Exception as e:
-            LOGGER.warning("Error setting delete image: %s", str(e))
-            return False
+                admin_setting.del_img = img_id
+                return True
+            except Exception as e:
+                LOGGER.warning("Error setting delete image: %s", str(e))
+                return False
 
 
 async def set_unavail_msg(message):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.notfound_msg = message
-            session.commit()
-            return True
+                admin_setting.notfound_msg = message
+                return True
     except Exception as e:
         LOGGER.warning("Error setting delete message: %s ", str(e))
         return False
@@ -288,35 +316,30 @@ async def set_unavail_msg(message):
 
 async def set_unavail_img(img_id):
     with INSERTION_LOCK:
-        session = SESSION()
-        try:
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+        with session_scope() as session:
+            try:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.notfound_img = img_id
-            session.commit()
-            return True
-        except Exception as e:
-            LOGGER.warning("Error setting not found image: %s", str(e))
-            return False
+                admin_setting.notfound_img = img_id
+                return True
+            except Exception as e:
+                LOGGER.warning("Error setting not found image: %s", str(e))
+                return False
 
 
 async def set_button_delete(dur):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.btn_del = dur
-            session.commit()
-
+                admin_setting.btn_del = dur
     except Exception as e:
         LOGGER.warning("Error setting button delete: %s ", str(e))
 
@@ -324,16 +347,13 @@ async def set_button_delete(dur):
 async def set_fsub_count(count):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.fsub_channel = count
-            session.commit()
-
+                admin_setting.fsub_channel = count
     except Exception as e:
         LOGGER.warning("Error setting fsub count: %s ", str(e))
 
@@ -341,16 +361,14 @@ async def set_fsub_count(count):
 async def set_fsub_msg(message):
     try:
         with INSERTION_LOCK:
-            session = SESSION()
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+            with session_scope() as session:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.fsub_msg = message
-            session.commit()
-            return True
+                admin_setting.fsub_msg = message
+                return True
     except Exception as e:
         LOGGER.warning("Error setting fsub message: %s ", str(e))
         return False
@@ -358,17 +376,15 @@ async def set_fsub_msg(message):
 
 async def set_fsub_img(img_id):
     with INSERTION_LOCK:
-        session = SESSION()
-        try:
-            admin_setting = session.query(AdminSettings).first()
-            if not admin_setting:
-                admin_setting = AdminSettings(setting_name="default")
-                session.add(admin_setting)
-                session.commit()
+        with session_scope() as session:
+            try:
+                admin_setting = session.query(AdminSettings).first()
+                if not admin_setting:
+                    admin_setting = AdminSettings(setting_name="default")
+                    session.add(admin_setting)
 
-            admin_setting.fsub_img = img_id
-            session.commit()
-            return True
-        except Exception as e:
-            LOGGER.warning("Error setting fsub image: %s", str(e))
-            return False
+                admin_setting.fsub_img = img_id
+                return True
+            except Exception as e:
+                LOGGER.warning("Error setting fsub image: %s", str(e))
+                return False
