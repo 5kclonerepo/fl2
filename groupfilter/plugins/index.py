@@ -1,8 +1,10 @@
 import re
 import asyncio
+import time
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait, ChannelPrivate
+from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.enums import MessageMediaType
 from groupfilter import ADMINS, LOGGER
 from groupfilter.db.files_sql import save_file, delete_file
 from groupfilter.utils.helpers import clean_text
@@ -13,6 +15,24 @@ lock = asyncio.Lock()
 media_filter = filters.document | filters.video | filters.audio
 index_task = None
 link_pattern = r"https://t\.me/c/(\d+)/(\d+)"
+
+CONCURRENT_BATCH_SIZE = 100
+MAX_REQUESTS_PER_MINUTE = 20
+REQUEST_INTERVAL = 60 / MAX_REQUESTS_PER_MINUTE
+last_request_time = 0
+consecutive_flood_waits = 0
+flood_wait_backoff = 1.0
+DB_SEMAPHORE = asyncio.Semaphore(20)
+
+
+async def rate_limited_request():
+    global last_request_time, consecutive_flood_waits, flood_wait_backoff
+    current_time = time.time()
+    elapsed = current_time - last_request_time
+    wait_time = max(REQUEST_INTERVAL, REQUEST_INTERVAL * flood_wait_backoff) - elapsed
+    if wait_time > 0:
+        await asyncio.sleep(wait_time)
+    last_request_time = time.time()
 
 
 @Client.on_message(
@@ -30,7 +50,11 @@ async def index_files(bot, message):
                 chat_id = message.forward_from_chat.username
             else:
                 chat_id = message.forward_from_chat.id
-            await bot.get_messages(chat_id=chat_id, message_ids=last_msg_id)
+            try:
+                await bot.get_messages(chat_id=chat_id, message_ids=last_msg_id)
+            except Exception as e:
+                await message.reply(f"Error while indexing: `{e}`")
+                return
 
             kb = InlineKeyboardMarkup(
                 [
@@ -67,10 +91,15 @@ async def manual_index(bot, message):
     args = message.text.split()[1:]
 
     if not args or len(args) > 2:
-        await message.reply("Invalid format. Use:\n/indexlink <link> [<link>]")
+        await message.reply("Invalid format. Use:\n/indexlink <link> <link>")
         return
     try:
         chat_id, start_msg_id, last_msg_id = extract_links(args)
+        try:
+            await bot.get_messages(chat_id=chat_id, message_ids=last_msg_id)
+        except Exception as e:
+            await message.reply(f"Error while indexing: `{e}`")
+            return
         kb = InlineKeyboardMarkup(
             [
                 [
@@ -111,7 +140,10 @@ async def start_index(bot, query):
     )
     msg = await bot.send_message(
         user_id,
-        "Processing Index...⏳\nCount will be updated after every 200 files.",
+        "🔄 Starting indexing process...\n\n"
+        "📊 Progress will be updated every 30 seconds\n"
+        "⏱️ Speed and statistics will be shown\n"
+        "🛑 Use the Cancel button to stop",
         reply_markup=kb,
     )
 
@@ -121,131 +153,196 @@ async def start_index(bot, query):
 
 
 async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
-    global index_task
+    global index_task, consecutive_flood_waits, flood_wait_backoff
+    global last_request_time
 
     total_files = 0
     current = int(start_msg_id)
-    counter = 0
     saved = 0
     dup = 0
     unsup = 0
+    errors = 0
+    deleted = 0
+    no_media = 0
     total = last_msg_id + 1
-    processed_groups = set()
+    processed_files = set()
+
+    start_time = time.time()
+    status_update_time = time.time()
+    semaphore = asyncio.Semaphore(CONCURRENT_BATCH_SIZE)
+
+    async def process_message(message):
+        nonlocal saved, dup, unsup, errors, deleted, no_media, total_files
+        if message and not message.empty:
+            if message.media:
+                if message.media in [
+                    MessageMediaType.VIDEO,
+                    MessageMediaType.AUDIO,
+                    MessageMediaType.DOCUMENT,
+                ]:
+                    media = getattr(message, message.media.value, None)
+                    if media:
+                        file_id = f"{media.file_unique_id}_{media.file_size}"
+
+                        if file_id in processed_files:
+                            dup += 1
+                            return
+
+                        processed_files.add(file_id)
+
+                        media.file_type = message.media.value
+                        media.caption = (
+                            message.caption.markdown
+                            if message.caption
+                            else clean_text(media.file_name)
+                        )
+                        try:
+                            async with DB_SEMAPHORE:
+                                result = await save_file(media)
+                                if result == "duplicate":
+                                    dup += 1
+                                elif result is True:
+                                    total_files += 1
+                                    saved += 1
+                                else:
+                                    errors += 1
+                                    LOGGER.error(
+                                        f"Unexpected result from save_file: {result}"
+                                    )
+                        except Exception as e:
+                            errors += 1
+                            LOGGER.error(f"Error saving file: {e}")
+                    else:
+                        unsup += 1
+                else:
+                    unsup += 1
+            else:
+                no_media += 1
+        else:
+            deleted += 1
+
+    async def process_batch(message_ids):
+        async with semaphore:
+            messages = await bot.get_messages(chat_id=chat_id, message_ids=message_ids)
+            tasks = []
+            for message in messages:
+                if message and not message.empty:
+                    tasks.append(process_message(message))
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
 
     async with lock:
         try:
             while current < total:
                 try:
-                    message = await bot.get_messages(chat_id=chat_id, message_ids=current, replies=0)
+                    await rate_limited_request()
+
+                    remaining = total - current
+                    batch_size = min(CONCURRENT_BATCH_SIZE, remaining)
+                    message_ids = list(range(current, current + batch_size))
+
+                    await process_batch(message_ids)
+
+                    consecutive_flood_waits = max(0, consecutive_flood_waits - 1)
+                    if consecutive_flood_waits == 0:
+                        flood_wait_backoff = max(1.0, flood_wait_backoff * 0.8)
+
+                    current_time = time.time()
+                    if current_time - status_update_time >= 30:
+                        elapsed = current_time - start_time
+                        speed = current / elapsed if elapsed > 0 else 0
+
+                        status_text = (
+                            "⌛ **Indexing Progress**\n\n"
+                            f"📊 Total messages processed: `{current}`\n"
+                            f"⏱️ Elapsed time: `{int(elapsed)}s`\n"
+                            f"⚡ Speed: `{int(speed)} msg/sec`\n\n"
+                            f"📥 Saved: `{saved}`\n"
+                            f"🔁 Duplicates: `{dup}`\n"
+                            f"🗑️ Deleted: `{deleted}`\n"
+                            f"📭 Non-media: `{no_media + unsup}`\n"
+                            f"⚠️ Errors: `{errors}`\n"
+                            f"🔄 Batch size: `{CONCURRENT_BATCH_SIZE}`"
+                        )
+
+                        try:
+                            await msg.edit(
+                                status_text,
+                                reply_markup=InlineKeyboardMarkup(
+                                    [
+                                        [
+                                            InlineKeyboardButton(
+                                                "Cancel", callback_data="cancel_index"
+                                            )
+                                        ]
+                                    ]
+                                ),
+                            )
+                            status_update_time = current_time
+                        except FloodWait as e:
+                            LOGGER.warning(
+                                f"FloodWait in status update: {e.value} seconds"
+                            )
+                            await asyncio.sleep(e.value)
+                        except Exception as e:
+                            LOGGER.error(f"Error updating status: {e}")
+
+                    current += batch_size
+                    await asyncio.sleep(0.1)
+
                 except FloodWait as e:
-                    LOGGER.warning("FloodWait while indexing, Error: %s", str(e))
+                    consecutive_flood_waits += 1
+                    flood_wait_backoff = min(10.0, flood_wait_backoff * 1.5)
+                    LOGGER.warning(
+                        f"FloodWait encountered: Waiting for {e.value} seconds (backoff: {flood_wait_backoff:.2f}x)"
+                    )
                     await asyncio.sleep(e.value)
                     continue
-                except asyncio.CancelledError:
-                    LOGGER.info("Indexing task was cancelled.")
-                    await msg.edit("Indexing process was cancelled.")
-                    return
-                except ChannelPrivate as e:
-                    LOGGER.warning("Chat is private or bot is not an admin: %s : %s", chat_id, str(e))
-                    await msg.edit(f"Chat is private or bot is not an admin: {chat_id}\nError: {str(e)}")
-                    return
+
                 except Exception as e:
-                    LOGGER.warning("Error occurred while fetching message: %s", str(e))
-                    current += 1
+                    LOGGER.error(f"Error processing batch: {e}")
+                    errors += batch_size
+                    current += batch_size
+                    await asyncio.sleep(2)
                     continue
 
-                if message.empty:
-                    LOGGER.warning("Empty message: Skipping message ID: %s", message.id)
-                    current += 1
-                    continue
+            total_time = time.time() - start_time
+            avg_speed = total / total_time if total_time > 0 else 0
 
-                media_group_id = message.media_group_id
-                if media_group_id and media_group_id not in processed_groups:
-                    processed_groups.add(media_group_id)
-                    try:
-                        messages = await bot.get_media_group(chat_id=chat_id, message_id=message.id)
-                    except Exception as e:
-                        LOGGER.warning("Error fetching media group: %s", str(e))
-                        current += 1
-                        continue
-                    for mssg in messages:
-                        try:
-                            for file_type in ("document", "video", "audio"):
-                                media = getattr(mssg, file_type, None)
-                                if media:
-                                    caption = mssg.caption or ""
-                                    file_name = media.file_name or "Unknown"
-                                    media.file_type = file_type
-                                    media.caption = caption.markdown if caption else clean_text(file_name)
-                                    save = await save_file(media)
-                                    if save:
-                                        if save == "duplicate":
-                                            dup += 1
-                                        else:
-                                            saved += 1
-                                    else:
-                                        unsup += 1
-                                        LOGGER.warning("Unsupported file type: %s, File name: %s", file_type, file_name)
-                                    total_files += 1
-                                    break
-                        except Exception as e:
-                            LOGGER.warning("Error occurred while saving file: %s", str(e))
-                    current += len(messages)
-                    counter += len(messages)
-                else:
-                    try:
-                        for file_type in ("document", "video", "audio"):
-                            media = getattr(message, file_type, None)
-                            if media:
-                                caption = message.caption or ""
-                                file_name = media.file_name or "Unknown"
-                                media.file_type = file_type
-                                media.caption = caption.markdown if caption else clean_text(file_name)
-                                save = await save_file(media)
-                                if save:
-                                    if save == "duplicate":
-                                        dup += 1
-                                    else:
-                                        saved += 1
-                                else:
-                                    unsup += 1
-                                    LOGGER.warning("Unsupported file type: %s, File name: %s", file_type, file_name)
-                                total_files += 1
-                                break
-                    except Exception as e:
-                        LOGGER.warning("Error occurred while saving file: %s", str(e))
-                    current += 1
-                    counter += 1
+            final_status = (
+                "✅ **Indexing completed!**\n\n"
+                f"📊 Total messages: `{total}`\n"
+                f"⏱️ Total time: `{int(total_time)}s`\n"
+                f"⚡ Average speed: `{int(avg_speed)} msg/sec`\n\n"
+                f"📁 Successfully saved: `{saved}`\n"
+                f"🔁 Duplicates skipped: `{dup}`\n"
+                f"🗑️ Deleted messages skipped: `{deleted}`\n"
+                f"📭 Non-media messages skipped: `{no_media + unsup}`\n"
+                f"⚠️ Errors occurred: `{errors}`"
+            )
 
-                if counter >= 200:
-                    try:
-                        kb = InlineKeyboardMarkup(
-                            [
-                                [
-                                    InlineKeyboardButton("Cancel", callback_data="cancel_index"),
-                                ]
-                            ]
-                        )
-                        await msg.edit(
-                            f"Total messages fetched: {current}\nTotal messages processed: {total_files}\nDuplicates: {dup}\nUnsupported: {unsup}",
-                            reply_markup=kb,
-                        )
-                        LOGGER.info("Total messages & files processed: %s : %s Duplicates: %s Unsupported: %s", current, total_files, dup, unsup)
-                    except FloodWait as e:
-                        LOGGER.warning("FloodWait while editing count message, sleeping for: %s seconds", str(e.value))
-                        await asyncio.sleep(e.value)
-                    counter -= counter
+            retry_count = 3
+            while retry_count > 0:
+                try:
+                    await msg.edit(final_status)
+                    break
+                except FloodWait as e:
+                    LOGGER.warning(f"FloodWait in final update: {e.value} seconds")
+                    await asyncio.sleep(e.value)
+                    retry_count -= 1
+                except Exception as e:
+                    LOGGER.error(f"Error in final status update: {e}")
+                    retry_count -= 1
+                    await asyncio.sleep(5)
 
             await clear_cache(bot, mess=False)
+
         except asyncio.CancelledError:
             LOGGER.info("Indexing task was cancelled.")
             await msg.edit("Indexing process was cancelled.")
         except Exception as e:
             LOGGER.exception(e)
             await msg.edit(f"Error while indexing: {e}")
-        else:
-            LOGGER.info("Indexing Complete: Total files saved: %s Duplicates: %s Unsupported: %s", saved, dup, unsup)
-            await msg.edit(f"**Indexing Complete:**\n**Saved Files:** `{saved}`\n**Duplicates:** `{dup}`\n**Unsupported:** `{unsup}`")
         finally:
             index_task = None
 
