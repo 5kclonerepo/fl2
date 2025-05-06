@@ -381,6 +381,7 @@ async def get_pm_files(bot, query):
 async def send_pm_file(admin_settings, bot, query, user_id, file_id, cbq):
     filedetails = await get_file_details(file_id)
     f_caption = ""
+    usr_msg = None
     for files in filedetails:
         caption = files["caption"]
         file_name = files["file_name"]

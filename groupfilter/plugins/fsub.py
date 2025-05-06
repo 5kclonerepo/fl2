@@ -277,11 +277,11 @@ async def get_all_fsub(bot, message):
         que = "**✧ In Queue:-**\n"
         comp = "**✧ Completed:-**\n"
         for sub in all_sub:
-            if sub.is_done:
+            if sub["is_done"]:
                 comp += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
-            if sub.is_queue:
+            if sub["is_queue"]:
                 que += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
-            if sub.is_active:
+            if sub["is_active"]:
                 active += f">✧ **Chat ID:**`{sub['chat_id']}`\n>**Name:** `{sub['chat_title']}`\n>**Link:** {sub['chat_link']}\n>**Join Request:** `{sub['is_req']}`\n>**Joins:** `{sub['join_count']}`\n>**Target:** `{sub['target']}`\n>**Remove:** `/rmfsub {sub['chat_id']}`\n\n"
             msg = active + que + comp
         await message.reply_text(
@@ -346,7 +346,7 @@ async def activate_fsub(bot, message):
 
     pen_fsub = await get_force_sub(int(channel))
     if pen_fsub:
-        if pen_fsub.is_queue:
+        if pen_fsub["is_queue"]:
             await update_force_sub(chat_id=int(channel), is_active=True, is_queue=False)
             await message.reply_text(
                 f"Force Subscription channel `{channel}` has been activated", quote=True

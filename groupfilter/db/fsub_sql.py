@@ -190,19 +190,19 @@ async def get_force_sub(chat_id):
     try:
         with session_scope() as session:
             sub = session.query(ForceSub).filter(ForceSub.chat_id == chat_id).first()
-            if sub:
-                return {
-                    "chat_id": sub.chat_id,
-                    "chat_title": sub.chat_title,
-                    "chat_link": sub.chat_link,
-                    "join_count": sub.join_count,
-                    "target": sub.target,
-                    "is_active": sub.is_active,
-                    "is_queue": sub.is_queue,
-                    "is_done": sub.is_done,
-                    "is_req": sub.is_req
-                }
-            return None
+            if sub is None:
+                return None
+            return {
+                "chat_id": sub.chat_id,
+                "chat_title": sub.chat_title,
+                "chat_link": sub.chat_link,
+                "join_count": sub.join_count,
+                "target": sub.target,
+                "is_active": sub.is_active,
+                "is_queue": sub.is_queue,
+                "is_done": sub.is_done,
+                "is_req": sub.is_req
+            }
     except Exception as e:
         LOGGER.error("Error getting Force Sub channel: %s", str(e))
         return None
@@ -214,8 +214,8 @@ async def get_pen_force_subs():
             subs = (
                 session.query(ForceSub)
                 .filter(ForceSub.is_done == False, ForceSub.is_active == False)
-                .all()
                 .order_by(ForceSub.id.asc())
+                .all()
             )
             return [{
                 "chat_id": sub.chat_id,
@@ -231,6 +231,7 @@ async def get_pen_force_subs():
     except Exception as e:
         LOGGER.error("Error getting Force Sub channel: %s", str(e))
         return None
+
 
 
 async def get_act_force_subs_count():
@@ -256,6 +257,8 @@ async def get_nxt_pen_force_sub():
                 .order_by(ForceSub.id.asc())
                 .first()
             )
+            if sub is None:
+                return None
             return {
                 "chat_id": sub.chat_id,
                 "chat_title": sub.chat_title,
@@ -268,7 +271,7 @@ async def get_nxt_pen_force_sub():
                 "is_queue": sub.is_queue
             }
     except Exception as e:
-        LOGGER.error("Error getting Force Sub channel: %s", str(e))
+        LOGGER.error("Error getting next pending Force Sub channel: %s", str(e))
         return None
 
 
