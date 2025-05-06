@@ -153,7 +153,8 @@ async def start_index(bot, query):
         "🔄 **Starting indexing process...**\n\n"
         "Loading files from database...\n"
         "This will take a while if the database has a lot of files.\n"
-        "Please be patient until the process is complete.",
+        "Please be patient until the process is complete.\n\n"
+        "__Files will be updated only after the index is complete__",
         reply_markup=kb,
     )
 
