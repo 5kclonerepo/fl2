@@ -171,3 +171,4 @@ jobs.sqlite
 genlink.db
 jobs.sqlite-journal
 unknown_errors.txt
+temp_index.db

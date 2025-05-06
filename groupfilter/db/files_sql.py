@@ -9,6 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.pool import QueuePool
+
 # from sqlalchemy.pool import StaticPool
 from groupfilter import DB_URL, LOGGER, BOT_TOKEN
 from groupfilter.utils.helpers import unpack_new_file_id
@@ -17,6 +18,7 @@ from sqlalchemy.dialects.postgresql import TSVECTOR
 from groupfilter.db.redis import NamespacedRedis
 import inspect
 from contextlib import contextmanager
+import sqlite3
 
 BASE = declarative_base()
 executor = ThreadPoolExecutor(max_workers=10)
@@ -33,7 +35,7 @@ token = BOT_TOKEN[-6:]
 redis_client = get_redis_client(token)
 
 try:
-    redis_client.config_set("maxmemory", "300mb")
+    redis_client.config_set("maxmemory", "500mb")
     redis_client.config_set("maxmemory-policy", "allkeys-lru")
 except Exception as e:
     LOGGER.warning("Error occurred while setting Redis configuration: %s", str(e))
@@ -98,6 +100,23 @@ def start() -> scoped_session:
 
 SESSION = start()
 INSERTION_LOCK = threading.RLock()
+
+
+@contextmanager
+def session_scope():
+    try:
+        yield SESSION
+        SESSION.commit()
+    except Exception as e:
+        SESSION.rollback()
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name if caller_frame else "unknown"
+        LOGGER.error(
+            "Database error occurred in function '%s': %s", caller_name, str(e)
+        )
+        raise
+    finally:
+        SESSION.close()
 
 
 async def save_file(media):
@@ -200,7 +219,7 @@ def fetch_filter_results_sync(query, page, per_page):
                     "file_name": file.file_name,
                     "file_id": file.file_id,
                     "file_ref": file.file_ref,
-                    "file_size": str(file.file_size),
+                    "file_size": str(int(file.file_size)),
                     "file_type": file.file_type,
                     "mime_type": file.mime_type,
                     "caption": file.caption,
@@ -241,7 +260,7 @@ async def get_precise_filter_results(query, page=1, per_page=10):
                         "file_name": file.file_name,
                         "file_id": file.file_id,
                         "file_ref": file.file_ref,
-                        "file_size": str(file.file_size),
+                        "file_size": str(int(file.file_size)),
                         "file_type": file.file_type,
                         "mime_type": file.mime_type,
                         "caption": file.caption,
@@ -276,7 +295,7 @@ async def get_last_results(page=1, per_page=10):
                         "file_name": file.file_name,
                         "file_id": file.file_id,
                         "file_ref": file.file_ref,
-                        "file_size": str(file.file_size),
+                        "file_size": str(int(file.file_size)),
                         "file_type": file.file_type,
                         "mime_type": file.mime_type,
                         "caption": file.caption,
@@ -347,7 +366,7 @@ async def get_inline_filter_results(query, page=1, per_page=10):
                         "file_name": file.file_name,
                         "file_id": file.file_id,
                         "file_ref": file.file_ref,
-                        "file_size": str(file.file_size),
+                        "file_size": str(int(file.file_size)),
                         "file_type": file.file_type,
                         "mime_type": file.mime_type,
                         "caption": file.caption,
@@ -378,7 +397,7 @@ async def get_file_details(file_id):
                     "file_name": file_details.file_name,
                     "file_id": file_details.file_id,
                     "file_ref": file_details.file_ref,
-                    "file_size": file_details.file_size,
+                    "file_size": str(int(file_details.file_size)),
                     "file_type": file_details.file_type,
                     "caption": file_details.caption,
                 }
@@ -426,16 +445,154 @@ def clean_query(query):
     return clean
 
 
-@contextmanager
-def session_scope():
+async def get_existing_files_cache():
     try:
-        yield SESSION
-        SESSION.commit()
+        with INSERTION_LOCK:
+            existing_files_data = {}
+            batch_size = 25000
+            offset = 0
+
+            while True:
+                files = SESSION.query(Files).offset(offset).limit(batch_size).all()
+                if not files:
+                    break
+
+                for file in files:
+                    file_key = file.file_id
+                    LOGGER.debug(f"Loading file with key: {file_key}")
+                    existing_files_data[file_key] = {
+                        "file_name": file.file_name,
+                        "file_id": file.file_id,
+                        "file_ref": file.file_ref,
+                        "file_size": str(int(file.file_size)),
+                        "file_type": file.file_type,
+                        "mime_type": file.mime_type,
+                        "caption": file.caption,
+                    }
+
+                LOGGER.info(f"Loaded {len(files)} files from the database")
+                offset += batch_size
+                if len(files) < batch_size:
+                    break
+            LOGGER.info(f"Total files loaded: {len(offset)}")
+            return existing_files_data
     except Exception as e:
-        SESSION.rollback()
-        caller_frame = inspect.currentframe().f_back
-        caller_name = caller_frame.f_code.co_name if caller_frame else "unknown"
-        LOGGER.error("Database error occurred in function '%s': %s", caller_name, str(e))
-        raise
+        LOGGER.error(f"Error getting existing files: {e}")
+        return {}
+
+
+async def save_new_files(new_files_data, DB_SEMAPHORE):
+    saved = 0
+    errors = 0
+    try:
+        for file_id, file_data in new_files_data.items():
+            try:
+                if isinstance(file_data, str):
+                    file_data = json.loads(file_data)
+
+                cleaned_fn = (
+                    clean_text(file_data["file_name"]) if file_data["file_name"] else ""
+                )
+                cleaned_cp = (
+                    clean_text(file_data["caption"]) if file_data["caption"] else ""
+                )
+                search_vector = func.to_tsvector(
+                    "simple",
+                    func.coalesce(cleaned_fn, "") + " " + func.coalesce(cleaned_cp, ""),
+                )
+
+                async with DB_SEMAPHORE:
+                    with INSERTION_LOCK:
+                        file = Files(
+                            file_name=file_data["file_name"],
+                            file_id=file_data["file_id"],
+                            file_ref=file_data["file_ref"],
+                            file_size=str(int(file_data["file_size"])),
+                            file_type=file_data["file_type"],
+                            mime_type=file_data["mime_type"],
+                            caption=file_data["caption"],
+                            search_vector=search_vector,
+                        )
+                        SESSION.add(file)
+                        SESSION.commit()
+                        saved += 1
+                        LOGGER.info(f"Indexed file to DB: {file_data['file_name']}")
+            except Exception as e:
+                errors += 1
+                LOGGER.error(f"Error saving file to DB: {e}")
+                LOGGER.error(f"File data that caused error: {file_data}")
+                SESSION.rollback()
+    except Exception as e:
+        LOGGER.error(f"Error in batch save: {e}")
+        errors += len(new_files_data)
+
+    return saved, errors
+
+
+@contextmanager
+def get_temp_db():
+    temp_db_path = "temp_index.db"
+    try:
+        conn = sqlite3.connect(temp_db_path)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS existing_files (
+                file_key TEXT PRIMARY KEY,
+                file_data TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS new_files (
+                file_key TEXT PRIMARY KEY,
+                file_data TEXT
+            )
+        """)
+        yield conn
     finally:
-        SESSION.close()
+        conn.close()
+
+
+async def save_to_temp_db(files_data, table_name):
+    with get_temp_db() as conn:
+        cursor = conn.cursor()
+        for file_key, file_data in files_data.items():
+            try:
+                file_key = str(file_key)
+                LOGGER.debug(f"Saving file with key: {file_key}")
+
+                if isinstance(file_data, dict):
+                    file_data = json.dumps(file_data)
+
+                cursor.execute(
+                    f"""
+                    INSERT OR IGNORE INTO {table_name} 
+                    (file_key, file_data)
+                    VALUES (?, ?)
+                """,
+                    (file_key, file_data),
+                )
+                LOGGER.debug(f"File saved successfully: {file_key}")
+            except Exception as e:
+                LOGGER.error(f"Error saving to temp DB: {e}")
+                LOGGER.error(f"Failed file key: {file_key}")
+                continue
+        LOGGER.debug("Saved %s files to temp DB", len(files_data))
+
+        conn.commit()
+
+
+async def check_file_exists(file_key, table_name):
+    with get_temp_db() as conn:
+        cursor = conn.cursor()
+        file_key = str(file_key)
+        LOGGER.debug(f"Checking file existence for key: {file_key}")
+        cursor.execute(f"SELECT 1 FROM {table_name} WHERE file_key = ?", (file_key,))
+        result = cursor.fetchone() is not None
+        LOGGER.debug(f"File exists check result: {result}")
+        return result
+
+
+async def get_new_files():
+    with get_temp_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT file_key, file_data FROM new_files")
+        return {row[0]: json.loads(row[1]) for row in cursor.fetchall()}

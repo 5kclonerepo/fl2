@@ -1,13 +1,23 @@
 import re
 import asyncio
 import time
+import json
+import os
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.enums import MessageMediaType
 from groupfilter import ADMINS, LOGGER
-from groupfilter.db.files_sql import save_file, delete_file
-from groupfilter.utils.helpers import clean_text
+from groupfilter.db.files_sql import (
+    save_file,
+    delete_file,
+    get_existing_files_cache,
+    save_to_temp_db,
+    check_file_exists,
+    get_new_files,
+    save_new_files,
+)
+from groupfilter.utils.helpers import clean_text, unpack_new_file_id
 from groupfilter.plugins.serve import clear_cache
 
 
@@ -140,10 +150,10 @@ async def start_index(bot, query):
     )
     msg = await bot.send_message(
         user_id,
-        "🔄 Starting indexing process...\n\n"
-        "📊 Progress will be updated every 30 seconds\n"
-        "⏱️ Speed and statistics will be shown\n"
-        "🛑 Use the Cancel button to stop",
+        "🔄 **Starting indexing process...**\n\n"
+        "Loading files from database...\n"
+        "This will take a while if the database has a lot of files.\n"
+        "Please be patient until the process is complete.",
         reply_markup=kb,
     )
 
@@ -165,11 +175,22 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
     deleted = 0
     no_media = 0
     total = last_msg_id + 1
-    processed_files = set()
+
+    semaphore = asyncio.Semaphore(CONCURRENT_BATCH_SIZE)
+
+    try:
+        existing_files_data = await get_existing_files_cache()
+        if existing_files_data:
+            await save_to_temp_db(existing_files_data, "existing_files")
+            LOGGER.info(f"Saved {len(existing_files_data)} existing files to temp DB")
+
+    except Exception as e:
+        LOGGER.error(f"Error saving existing files to temp DB: {e}")
+        await msg.edit(f"Error saving existing files to temp DB: {e}")
+        return
 
     start_time = time.time()
     status_update_time = time.time()
-    semaphore = asyncio.Semaphore(CONCURRENT_BATCH_SIZE)
 
     async def process_message(message):
         nonlocal saved, dup, unsup, errors, deleted, no_media, total_files
@@ -182,13 +203,15 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
                 ]:
                     media = getattr(message, message.media.value, None)
                     if media:
-                        file_id = f"{media.file_unique_id}_{media.file_size}"
+                        file_id, file_ref = unpack_new_file_id(media.file_id)
 
-                        if file_id in processed_files:
+                        if await check_file_exists(file_id, "existing_files"):
                             dup += 1
                             return
 
-                        processed_files.add(file_id)
+                        if await check_file_exists(file_id, "new_files"):
+                            dup += 1
+                            return
 
                         media.file_type = message.media.value
                         media.caption = (
@@ -196,22 +219,20 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
                             if message.caption
                             else clean_text(media.file_name)
                         )
-                        try:
-                            async with DB_SEMAPHORE:
-                                result = await save_file(media)
-                                if result == "duplicate":
-                                    dup += 1
-                                elif result is True:
-                                    total_files += 1
-                                    saved += 1
-                                else:
-                                    errors += 1
-                                    LOGGER.error(
-                                        f"Unexpected result from save_file: {result}"
-                                    )
-                        except Exception as e:
-                            errors += 1
-                            LOGGER.error(f"Error saving file: {e}")
+
+                        new_file_data = {
+                            "file_name": media.file_name,
+                            "file_id": file_id,
+                            "file_ref": file_ref,
+                            "file_size": str(int(media.file_size)),
+                            "file_type": media.file_type,
+                            "mime_type": media.mime_type,
+                            "caption": media.caption,
+                        }
+
+                        await save_to_temp_db({file_id: new_file_data}, "new_files")
+                        saved += 1
+                        total_files += 1
                     else:
                         unsup += 1
                 else:
@@ -222,14 +243,18 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
             deleted += 1
 
     async def process_batch(message_ids):
+        nonlocal deleted
         async with semaphore:
             messages = await bot.get_messages(chat_id=chat_id, message_ids=message_ids)
             tasks = []
             for message in messages:
                 if message and not message.empty:
                     tasks.append(process_message(message))
+                else:
+                    deleted += 1
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
+            LOGGER.info(f"Processed {len(messages)} messages")
 
     async with lock:
         try:
@@ -252,16 +277,29 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
                         elapsed = current_time - start_time
                         speed = current / elapsed if elapsed > 0 else 0
 
+                        if elapsed >= 3600:
+                            hours = int(elapsed // 3600)
+                            minutes = int((elapsed % 3600) // 60)
+                            seconds = int(elapsed % 60)
+                            elapsed_str = f"{hours}h {minutes}m {seconds}s"
+                        elif elapsed >= 60:
+                            minutes = int(elapsed // 60)
+                            seconds = int(elapsed % 60)
+                            elapsed_str = f"{minutes}m {seconds}s"
+                        else:
+                            elapsed_str = f"{int(elapsed)}s"
+
                         status_text = (
                             "⌛ **Indexing Progress**\n\n"
                             f"📊 Total messages processed: `{current}`\n"
-                            f"⏱️ Elapsed time: `{int(elapsed)}s`\n"
+                            f"⏱️ Elapsed time: `{elapsed_str}`\n"
                             f"⚡ Speed: `{int(speed)} msg/sec`\n\n"
                             f"📥 Saved: `{saved}`\n"
                             f"🔁 Duplicates: `{dup}`\n"
                             f"🗑️ Deleted: `{deleted}`\n"
                             f"📭 Non-media: `{no_media + unsup}`\n"
                             f"⚠️ Errors: `{errors}`\n"
+                            f"➕ Remaining: `{remaining}`\n"
                             f"🔄 Batch size: `{CONCURRENT_BATCH_SIZE}`"
                         )
 
@@ -306,13 +344,37 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
                     await asyncio.sleep(2)
                     continue
 
+            try:
+                new_files = await get_new_files()
+                LOGGER.info(f"New files: {len(new_files)}")
+                if new_files:
+                    new_saved, new_errors = await save_new_files(
+                        new_files, DB_SEMAPHORE
+                    )
+                    saved = new_saved
+                    errors += new_errors
+            except Exception as e:
+                LOGGER.error(f"Error saving new files to main DB: {e}")
+                errors += len(new_files)
+
             total_time = time.time() - start_time
+            if total_time >= 3600:
+                hours = int(total_time // 3600)
+                minutes = int((total_time % 3600) // 60)
+                seconds = int(total_time % 60)
+                elapsed_str = f"{hours}h {minutes}m {seconds}s"
+            elif total_time >= 60:
+                minutes = int(total_time // 60)
+                seconds = int(total_time % 60)
+                elapsed_str = f"{minutes}m {seconds}s"
+            else:
+                elapsed_str = f"{int(total_time)}s"
             avg_speed = total / total_time if total_time > 0 else 0
 
             final_status = (
                 "✅ **Indexing completed!**\n\n"
                 f"📊 Total messages: `{total}`\n"
-                f"⏱️ Total time: `{int(total_time)}s`\n"
+                f"⏱️ Total time: `{elapsed_str}`\n"
                 f"⚡ Average speed: `{int(avg_speed)} msg/sec`\n\n"
                 f"📁 Successfully saved: `{saved}`\n"
                 f"🔁 Duplicates skipped: `{dup}`\n"
@@ -325,6 +387,7 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
             while retry_count > 0:
                 try:
                     await msg.edit(final_status)
+                    LOGGER.info(f"Final status update: {final_status}")
                     break
                 except FloodWait as e:
                     LOGGER.warning(f"FloodWait in final update: {e.value} seconds")
@@ -344,6 +407,13 @@ async def index_files_task(bot, msg, chat_id, start_msg_id, last_msg_id):
             LOGGER.exception(e)
             await msg.edit(f"Error while indexing: {e}")
         finally:
+            temp_db_path = "temp_index.db"
+            if os.path.exists(temp_db_path):
+                try:
+                    os.remove(temp_db_path)
+                    LOGGER.info("Temporary SQLite database deleted successfully")
+                except Exception as e:
+                    LOGGER.error(f"Error deleting temporary SQLite database: {e}")
             index_task = None
 
 
