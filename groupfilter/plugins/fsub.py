@@ -455,8 +455,8 @@ async def check_fsub_users(bot, message):
 
 async def is_fsub(bot, query, user_id, file_id, admin_settings):
     f_sub = await get_active_force_subs()
-    actfsubcount = int(await get_act_force_subs_count())
-    fsublimit = int(admin_settings["fsub_channel"]) or 2
+    actfsubcount = await get_act_force_subs_count() or 0
+    fsublimit = admin_settings["fsub_channel"] or 2
 
     if f_sub:
         if actfsubcount < fsublimit:
