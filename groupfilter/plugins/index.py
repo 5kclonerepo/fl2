@@ -16,6 +16,8 @@ from groupfilter.db.files_sql import (
     check_file_exists,
     get_new_files,
     save_new_files,
+    search_files_by_name,
+    delete_files_by_name,
 )
 from groupfilter.utils.helpers import clean_text, unpack_new_file_id
 from groupfilter.plugins.serve import clear_cache
@@ -465,6 +467,99 @@ async def delete_files(bot, message):
                 break
     except Exception as e:
         LOGGER.warning("Error occurred while deleting file: %s", str(e))
+
+
+@Client.on_message(filters.command(["delmulti"]) & filters.user(ADMINS))
+async def delete_multiple_files(bot, message):
+    try:
+        search_term = (
+            message.text.split(" ", 1)[1].strip()
+            if len(message.text.split()) > 1
+            else None
+        )
+        if not search_term:
+            await message.reply(
+                "Please provide a file name to search for. Usage: /delmulti filename"
+            )
+            return
+
+        files = await search_files_by_name(search_term)
+
+        if not files:
+            await message.reply(f"No files found with name containing '{search_term}'")
+            return
+
+        file_list = "\n".join([f"• {file['file_name']}" for file in files])
+        total_files = len(files)
+
+        kb = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "✅ Yes, Delete All",
+                        callback_data=f"delmulti_confirm_{search_term}",
+                    ),
+                    InlineKeyboardButton(
+                        "❌ No, Cancel", callback_data="delmulti_cancel"
+                    ),
+                ]
+            ]
+        )
+
+        if len(file_list) > 4000:
+            file_content = (
+                f"Files matching '{search_term}' ({total_files} files):\n\n{file_list}"
+            )
+            temp_file = f"files_to_delete_{search_term}.txt"
+            with open(temp_file, "w", encoding="utf-8") as f:
+                f.write(file_content)
+
+            preview_list = "\n".join([f"• {file['file_name']}" for file in files])
+            preview_msg = (
+                f"Found {total_files} files matching '{search_term}':\n\n{preview_list}"
+            )
+            await message.reply_document(
+                document=temp_file,
+                caption=preview_msg,
+                reply_markup=kb,
+            )
+            try:
+                os.remove(temp_file)
+            except Exception as e:
+                LOGGER.warning(f"Error removing temporary file: {str(e)}")
+        else:
+            confirmation_msg = f"Found {total_files} files matching '{search_term}':\n\n{file_list}\n\nDo you want to delete these files?"
+            await message.reply(
+                confirmation_msg,
+                reply_markup=kb,
+            )
+    except Exception as e:
+        LOGGER.warning("Error occurred while searching files: %s", str(e))
+        await message.reply(
+            "An error occurred while searching for files. Please check logs for more info."
+        )
+
+
+@Client.on_callback_query(filters.regex("^delmulti_confirm_"))
+async def confirm_delete_multiple(bot, query):
+    try:
+        search_term = query.data.split("_", 2)[2]
+        deleted_count, failed_count = await delete_files_by_name(search_term)
+        if deleted_count == 0 and failed_count == 0:
+            await query.message.edit_text("No files found to delete.")
+            return
+        result_msg = f"Deletion complete!\n\nDeleted: {deleted_count} files\nFailed: {failed_count} files"
+        await query.message.edit_text(result_msg)
+    except Exception as e:
+        LOGGER.warning("Error occurred while deleting files: %s", str(e))
+        await query.message.edit_text(
+            "An error occurred while deleting files. Please check logs for more info."
+        )
+
+
+@Client.on_callback_query(filters.regex("^delmulti_cancel$"))
+async def cancel_delete_multiple(bot, query):
+    await query.message.edit_text("File deletion cancelled.")
 
 
 @Client.on_callback_query(filters.regex(r"^can-index$"))

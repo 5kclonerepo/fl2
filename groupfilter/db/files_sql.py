@@ -598,3 +598,103 @@ async def get_new_files():
         cursor = conn.cursor()
         cursor.execute("SELECT file_key, file_data FROM new_files")
         return {row[0]: json.loads(row[1]) for row in cursor.fetchall()}
+
+
+async def search_files_by_name(search_term):
+    max_retries = 3
+    retry_delay = 1  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            with INSERTION_LOCK:
+                search = [word for word in search_term.split()]
+                conditions = [
+                    Files.search_vector.op("@@")(func.plainto_tsquery("simple", term))
+                    if len(term) <= 2
+                    else or_(
+                        Files.search_vector.op("@@")(func.plainto_tsquery("simple", term)),
+                        Files.search_vector.op("@@")(func.to_tsquery("simple", f"{term}:*")),
+                    )
+                    for term in search
+                ]
+                combined_condition = and_(*conditions)
+
+                files = SESSION.query(Files).filter(combined_condition).order_by(Files.id.desc()).all()
+                return [
+                    {
+                        "file_name": file.file_name,
+                        "file_id": file.file_id,
+                        "file_ref": file.file_ref,
+                        "file_size": str(int(file.file_size)),
+                        "file_type": file.file_type,
+                        "mime_type": file.mime_type,
+                        "caption": file.caption,
+                    }
+                    for file in files
+                ]
+        except Exception as e:
+            LOGGER.warning(f"Error occurred while searching files by name (attempt {attempt + 1}/{max_retries}): {str(e)}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                # Try to refresh the session
+                try:
+                    SESSION.close()
+                    SESSION.remove()
+                except:
+                    pass
+            else:
+                raise
+    return []
+
+
+async def delete_files_by_name(search_term):
+    max_retries = 3
+    retry_delay = 1  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            with INSERTION_LOCK:
+                search = [word for word in search_term.split()]
+                conditions = [
+                    Files.search_vector.op("@@")(func.plainto_tsquery("simple", term))
+                    if len(term) <= 2
+                    else or_(
+                        Files.search_vector.op("@@")(func.plainto_tsquery("simple", term)),
+                        Files.search_vector.op("@@")(func.to_tsquery("simple", f"{term}:*")),
+                    )
+                    for term in search
+                ]
+                combined_condition = and_(*conditions)
+
+                files = SESSION.query(Files).filter(combined_condition).all()
+                if not files:
+                    return 0, 0
+                
+                deleted_count = 0
+                failed_count = 0
+                
+                for file in files:
+                    try:
+                        SESSION.delete(file)
+                        deleted_count += 1
+                    except Exception as e:
+                        LOGGER.warning(f"Error deleting file {file.file_name}: {str(e)}")
+                        failed_count += 1
+                        
+                SESSION.commit()
+                return deleted_count, failed_count
+                
+        except Exception as e:
+            LOGGER.warning(f"Error occurred while deleting files by name (attempt {attempt + 1}/{max_retries}): {str(e)}")
+            SESSION.rollback()
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                # Try to refresh the session
+                try:
+                    SESSION.close()
+                    SESSION.remove()
+                except:
+                    pass
+            else:
+                raise
+    return 0, 0
