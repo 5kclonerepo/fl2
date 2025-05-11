@@ -506,7 +506,8 @@ async def delete_multiple_files(bot, message):
             ]
         )
 
-        if len(file_list) > 4000:
+        confirmation_msg = f"Found {total_files} files matching '{search_term}':\n\n{file_list}\n\nDo you want to delete these files?"
+        if len(confirmation_msg) > 3900:
             file_content = (
                 f"Files matching '{search_term}' ({total_files} files):\n\n{file_list}"
             )
@@ -514,10 +515,8 @@ async def delete_multiple_files(bot, message):
             with open(temp_file, "w", encoding="utf-8") as f:
                 f.write(file_content)
 
-            preview_list = "\n".join([f"• {file['file_name']}" for file in files])
-            preview_msg = (
-                f"Found {total_files} files matching '{search_term}':\n\n{preview_list}"
-            )
+            preview_msg = f"Found {total_files} files matching '{search_term}'. See attached document for full list."
+            
             await message.reply_document(
                 document=temp_file,
                 caption=preview_msg,
@@ -528,7 +527,6 @@ async def delete_multiple_files(bot, message):
             except Exception as e:
                 LOGGER.warning(f"Error removing temporary file: {str(e)}")
         else:
-            confirmation_msg = f"Found {total_files} files matching '{search_term}':\n\n{file_list}\n\nDo you want to delete these files?"
             await message.reply(
                 confirmation_msg,
                 reply_markup=kb,
