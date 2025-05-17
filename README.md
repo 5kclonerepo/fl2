@@ -2,11 +2,8 @@
 
 A telegram bot to find files saved in its database and to serve in them groups.
 
-Re-written version of [Media Search bot](https://github.com/Mahesh0253/Media-Search-bot) which is tweaked to work in groups.
-
 ## Features
 
-- Precise search option for more accurate results.
 - Auto index files from given database channel/group.
 - Group settings for customization.
 - Admin settings within the bot.
@@ -51,14 +48,18 @@ createuser -P -s -e YOUR_USER
 createdb -O YOUR_USER YOUR_DB_NAME
 #Change YOUR_USER and YOUR_DB_NAME appropriately.
 
-# finally:
+# finally: To verify
 psql -h YOUR_HOST -p YOUR_PORT -d YOUR_DB_NAME -U YOUR_USER
 
 #This will allow you to connect to your database via your terminal.
 By default, YOUR_HOST should be `localhost` & YOUR_PORT should be `5432`.
 
+If connected, write \q then Enter to exit
+Again type `exit` and Enter to exit postgres user
+
+
 You should now be able to build your database URI. This will be:
-sqldbtype://username:password@hostname:port/db_name
+postgresql://username:password@hostname:port/db_name
 
 Replace your sqldbtype, username, password, hostname (localhost?), port (5432?), and db name in .env file.
 ```
@@ -96,21 +97,3 @@ If you want to modify start & help messages, copy [`sample_const.py`](sample_con
 ```bash
 cp sample_const.py const.py
 ```
-
-## Support
-
-Feedback or Support
-
-Join our updates channel to get latest updates about our bots [EL Updates](https://t.me/ELUpdates)
-
-If you have any feedback or to report any issues, please reach out to us at [EL Support](https://t.me/ELSupport)
-
-## License
-
-[![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://github.com/EL-Coders/mediafinder/blob/main/LICENSE)
-
-## Contributing
-
-Contributions are always welcome, but please test your code before pushing!
-
-Also, kindly adhere to this project\'s `code of conduct`.

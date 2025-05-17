@@ -18,7 +18,7 @@ def get_input_file_from_file_id(
             f'Failed to decode "{file_id}". The value does not represent an existing local file, '
             f"HTTP URL, or valid file id."
         )
-
+    #stg
     file_type = decoded.file_type
 
     if expected_file_type is not None and file_type != expected_file_type:
