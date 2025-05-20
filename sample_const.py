@@ -3,6 +3,39 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
+START_IMG = "https://i.ibb.co/0r00000/1.png"
+
+def get_start_kb(bot_username):
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "➕ Add Me To Your Groups ➕",
+                    url=f"http://t.me/{bot_username}?startgroup=true",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🪄 Oᴡɴᴇʀ 🪄", url="https://t.me/Sathan_Of_Telegram"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "⚠️ Group 1 ⚠️", url="https://t.me/Cinemathattakam_Group"
+                ),
+                InlineKeyboardButton(
+                    "✨ Group 2 ✨", url="https://t.me/Cinemathattakam_Group1"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "🥇 Mᴀɪɴ Cʜᴀɴɴᴇʟ 🥇", url="https://t.me/CT_Arena"
+                )
+            ],
+        ]
+    )
+    
+
 START_KB = InlineKeyboardMarkup(
     [
         [
@@ -74,7 +107,7 @@ def nf_kb(term):
 )
 
 
-START_MSG = "Hi **[{}](tg://user?id={})**, I am a an autofilter bot which finds & shares media from my database."
+START_MSG = "Hᴇʏ Tʜᴇʀᴇ {}, Mʏ Nᴀᴍᴇ ɪs **[{}](tg://user?id={})** 🐻.\n\nI'ᴍ ᴀɴ ᴀᴜᴛᴏғɪʟᴛᴇʀ ʙᴏᴛ 🤗 I ᴄᴀɴ ᴘʀᴏᴠɪᴅᴇ ʏᴏᴜ ᴍᴏᴠɪᴇs 24/7, \nYᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴇ ʙʏ ᴀᴅᴅɪɴɢ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴏʀ ᴊᴜsᴛ sᴇɴᴅ ᴛʜᴇ ᴍᴏᴠɪᴇ ɴᴀᴍᴇ ʜᴇʀᴇ, Eɴᴊᴏʏ 😍"
 
 
 HELP_MSG = """

@@ -29,6 +29,8 @@ from sample_const import (
     SET_HLP_MSG,
     UTIL_HLP_MSG,
     HELP_BK_KB,
+    get_start_kb,
+    START_IMG
 )
 from groupfilter.utils.util_support import humanbytes, get_db_size
 from groupfilter.plugins.serve import get_files, scheduler
@@ -53,11 +55,18 @@ async def start(bot, update):
             LOGGER.warning(e)
             start_msg = STARTMSG.format(name, user_id)
 
-        await bot.send_message(
+        # await bot.send_message(
+        #     chat_id=update.chat.id,
+        #     text=start_msg,
+        #     reply_to_message_id=update.reply_to_message_id,
+        #     reply_markup=get_start_kb(bot.me.username),
+        # )
+        await bot.send_photo(
             chat_id=update.chat.id,
-            text=start_msg,
+            photo=START_IMG,
+            caption=start_msg,
             reply_to_message_id=update.reply_to_message_id,
-            reply_markup=START_KB,
+            reply_markup=get_start_kb(bot.me.username),
         )
     elif len(update.command) == 2:
         try:
