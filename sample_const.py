@@ -3,8 +3,8 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-START_IMG = "start_img.png"
-NOT_F_IMG = "nf_img.png"
+START_IMG = ["AgACAgUAAxkBAAIBGmgtjNs_hI9-nwzIDJ39b-e-VA5OAAL3xTEbmvJxVbsgB888qOW2AAgBAAMCAAN5AAceBA"]
+NOT_F_IMG = "AgACAgUAAxkBAAIBFmgtjK0tpLrMIij_gmxL-X7UZcmOAAJxwjEbeVdwVdo_WznufZ4gAAgBAAMCAAN5AAceBA"
 
 def get_start_kb(bot_username):
     return InlineKeyboardMarkup(
@@ -108,7 +108,7 @@ def nf_kb(term):
 )
 
 
-START_MSG = "Hᴇʏ Tʜᴇʀᴇ {}, Mʏ Nᴀᴍᴇ ɪs **[{}](tg://user?id={})** 🐻.\n\nI'ᴍ ᴀɴ ᴀᴜᴛᴏғɪʟᴛᴇʀ ʙᴏᴛ 🤗 I ᴄᴀɴ ᴘʀᴏᴠɪᴅᴇ ʏᴏᴜ ᴍᴏᴠɪᴇs 24/7, \nYᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴇ ʙʏ ᴀᴅᴅɪɴɢ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴏʀ ᴊᴜsᴛ sᴇɴᴅ ᴛʜᴇ ᴍᴏᴠɪᴇ ɴᴀᴍᴇ ʜᴇʀᴇ, Eɴᴊᴏʏ 😍"
+START_MSG = "Hᴇʏ Tʜᴇʀᴇ {}, Mʏ Nᴀᴍᴇ ɪs **{}** 🐻.\n\nI'ᴍ ᴀɴ ᴀᴜᴛᴏғɪʟᴛᴇʀ ʙᴏᴛ 🤗 I ᴄᴀɴ ᴘʀᴏᴠɪᴅᴇ ʏᴏᴜ ᴍᴏᴠɪᴇs 24/7, \nYᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴇ ʙʏ ᴀᴅᴅɪɴɢ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴏʀ ᴊᴜsᴛ sᴇɴᴅ ᴛʜᴇ ᴍᴏᴠɪᴇ ɴᴀᴍᴇ ʜᴇʀᴇ, Eɴᴊᴏʏ 😍"
 
 
 HELP_MSG = """

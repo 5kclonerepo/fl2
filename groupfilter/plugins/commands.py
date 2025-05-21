@@ -50,7 +50,7 @@ async def start(bot, update):
     await add_user(user_id, user_name)
     if len(update.command) == 1:
         try:
-            start_msg = START_MSG.format(name, user_id)
+            start_msg = START_MSG.format(update.from_user.mention, bot.me.mention)
         except Exception as e:
             LOGGER.warning(e)
             start_msg = STARTMSG.format(name, user_id)
@@ -61,9 +61,10 @@ async def start(bot, update):
         #     reply_to_message_id=update.reply_to_message_id,
         #     reply_markup=get_start_kb(bot.me.username),
         # )
+        strt_img = random.choice(START_IMG)
         await bot.send_photo(
             chat_id=update.chat.id,
-            photo=START_IMG,
+            photo=strt_img,
             caption=start_msg,
             reply_to_message_id=update.reply_to_message_id,
             reply_markup=get_start_kb(bot.me.username),
