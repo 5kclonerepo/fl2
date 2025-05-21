@@ -4,7 +4,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 START_IMG = ["AgACAgUAAxkBAAIBGmgtjNs_hI9-nwzIDJ39b-e-VA5OAAL3xTEbmvJxVbsgB888qOW2AAgBAAMCAAN5AAceBA",]
-NOT_F_IMG = "AgACAgUAAxkBAAIBFmgtjK0tpLrMIij_gmxL-X7UZcmOAAJxwjEbeVdwVdo_WznufZ4gAAgBAAMCAAN5AAceBA"
+# NOT_F_IMG = "AgACAgUAAxkBAAIBFmgtjK0tpLrMIij_gmxL-X7UZcmOAAJxwjEbeVdwVdo_WznufZ4gAAgBAAMCAAN5AAceBA"
 
 def get_start_kb(bot_username):
     return InlineKeyboardMarkup(
@@ -237,8 +237,8 @@ UTIL_HLP_MSG = """
 """
 
 
-def nf_txt(mention, term):
-    return f"𝗛ᴇʏ {mention},\nCᴏᴜʟᴅɴ'ᴛ Fɪɴᴅ Tʜᴇ Fɪʟᴇ Yᴏᴜ Rᴇqᴜᴇꜱᴛᴇᴅ.\nMᴀᴋᴇ Sᴜʀᴇ Tʜᴇ Cᴏʀʀᴇᴄᴛ Sᴩᴇʟʟɪɴɢ.\nTʀʏ Sᴇᴀʀᴄʜɪɴɢ {term} ᴏɴ Gᴏᴏɢʟᴇ!"
+def nf_txt(mention, search):
+    return f"𝗛ᴇʏ **{mention}**,\nCᴏᴜʟᴅɴ'ᴛ Fɪɴᴅ Tʜᴇ Fɪʟᴇ Yᴏᴜ Rᴇqᴜᴇꜱᴛᴇᴅ.\nMᴀᴋᴇ Sᴜʀᴇ Tʜᴇ Cᴏʀʀᴇᴄᴛ Sᴩᴇʟʟɪɴɢ.\nTʀʏ Sᴇᴀʀᴄʜɪɴɢ `{search}` ᴏɴ Gᴏᴏɢʟᴇ! [‎ ](https://envs.sh/YIV.jpg)"
 
 
 def res_txt(mention, search, botmention, count, crnt_pg, tot_pg):

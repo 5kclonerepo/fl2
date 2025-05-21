@@ -40,7 +40,7 @@ from groupfilter.db.filters_sql import is_filter
 from groupfilter.db.promo_sql import get_promos
 from groupfilter.plugins.fsub import is_fsub
 from groupfilter.utils.helpers import clean_text, clean_fname, clean_se
-from sample_const import nf_txt, nf_kb, res_txt, NOT_F_IMG
+from sample_const import nf_txt, nf_kb, res_txt
 from groupfilter import LOGGER, ADMINS, AUTH_GRPS, DELIVERY_CHANNELS
 from __main__ import app
 
@@ -184,7 +184,7 @@ async def filter_(bot, message, search=None):
             else:
                 nf_msg = nf_txt(mention, search)
                 nf_kbb = nf_kb(search)
-                await message.reply_photo(photo=NOT_F_IMG, caption=nf_msg, show_caption_above_media=True, reply_markup=nf_kbb)
+                await message.reply_text(nf_msg, reply_markup=nf_kbb)
         if src:
             await src.delete()
     except ButtonDataInvalid as e:
@@ -285,7 +285,7 @@ async def pages(bot, query):
         else:
             nf_msg = nf_txt(mention, search)
             nf_kbb = nf_kb(search)
-            await message.reply_photo(photo=NOT_F_IMG, caption=nf_msg, show_caption_above_media=True, reply_markup=nf_kbb)
+            await query.message.reply_text(nf_msg, reply_markup=nf_kbb)
 
 
 async def get_result(search, page_no, user_id, username, chat_id, mention, botmention):
