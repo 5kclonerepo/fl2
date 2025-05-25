@@ -4,7 +4,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 START_IMG = ["AgACAgUAAxkBAAMKaDBJVWT3JHVJUpjgUCEqanSVLJQAAmfHMRu90IBVgDcZvfxN_80ACAEAAwIAA3gABx4E","AgACAgUAAxkBAAMyaDBP3Ze7RCrM8nzYh3LclFDi07AAAvHQMRt4koBVOo9wNn_ue80ACAEAAwIAA3gABx4E","AgACAgUAAxkBAAM1aDBQMxtD9YjuvaENYfoC6D9rImAAAnbHMRu90IBV0OFSTAu4j58ACAEAAwIAA3gABx4E","AgACAgUAAxkBAAMfaDBKcR8XZzSNOVL52ZZ-MjbeQrUAAmrHMRu90IBVXQmPUAbgUxQACAEAAwIAA3gABx4E","AgACAgUAAxkBAAMcaDBKQU7VKW1Wkcx4IFN9wNTJIN4AAmnHMRu90IBVFSGTiztyDesACAEAAwIAA3gABx4E","AgACAgUAAxkBAAMPaDBJ7__UQgTWe_UKphdvGnrWxMcAAmjHMRu90IBVkynPtzG2pCgACAEAAwIAA3gABx4E",]
-# NOT_F_IMG = "AgACAgUAAxkBAAIBFmgtjK0tpLrMIij_gmxL-X7UZcmOAAJxwjEbeVdwVdo_WznufZ4gAAgBAAMCAAN5AAceBA"
+NOT_F_IMG = "AgACAgUAAxkBAAIBFmgtjK0tpLrMIij_gmxL-X7UZcmOAAJxwjEbeVdwVdo_WznufZ4gAAgBAAMCAAN5AAceBA"
 
 def get_start_kb(bot_username):
     return InlineKeyboardMarkup(
@@ -108,7 +108,7 @@ def nf_kb(term):
 )
 
 
-START_MSG = "Hᴇʏ Tʜᴇʀᴇ {}, Mʏ Nᴀᴍᴇ ɪs **{}** 🐻.\n\nI'ᴍ ᴀɴ ᴀᴜᴛᴏғɪʟᴛᴇʀ ʙᴏᴛ 🤗 I ᴄᴀɴ ᴘʀᴏᴠɪᴅᴇ ʏᴏᴜ ᴍᴏᴠɪᴇs 24/7, \nYᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴇ ʙʏ ᴀᴅᴅɪɴɢ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴏʀ ᴊᴜsᴛ sᴇɴᴅ ᴛʜᴇ ᴍᴏᴠɪᴇ ɴᴀᴍᴇ ʜᴇʀᴇ, Eɴᴊᴏʏ 😍"
+START_MSG = "Hᴇʏ Tʜᴇʀᴇ {}, Mʏ Nᴀᴍᴇ ɪs **{}** .\n\nI'ᴍ ᴀɴ ᴀᴜᴛᴏғɪʟᴛᴇʀ ʙᴏᴛ 🤗 I ᴄᴀɴ ᴘʀᴏᴠɪᴅᴇ ʏᴏᴜ ᴍᴏᴠɪᴇs 24/7, \nYᴏᴜ ᴄᴀɴ ᴜsᴇ ᴍᴇ ʙʏ ᴀᴅᴅɪɴɢ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴏʀ ᴊᴜsᴛ sᴇɴᴅ ᴛʜᴇ ᴍᴏᴠɪᴇ ɴᴀᴍᴇ ʜᴇʀᴇ, Eɴᴊᴏʏ 😍"
 
 
 HELP_MSG = """
@@ -232,7 +232,7 @@ UTIL_HLP_MSG = """
 
 
 def nf_txt(mention, search):
-    return f"𝗛ᴇʏ **{mention}**,\nCᴏᴜʟᴅɴ'ᴛ Fɪɴᴅ Tʜᴇ Fɪʟᴇ Yᴏᴜ Rᴇqᴜᴇꜱᴛᴇᴅ.\nMᴀᴋᴇ Sᴜʀᴇ Tʜᴇ Cᴏʀʀᴇᴄᴛ Sᴩᴇʟʟɪɴɢ.\nTʀʏ Sᴇᴀʀᴄʜɪɴɢ `{search}` ᴏɴ Gᴏᴏɢʟᴇ! [‎ ](https://envs.sh/YIV.jpg)"
+    return f"𝗛ᴇʏ **{mention}**,\nCᴏᴜʟᴅɴ'ᴛ Fɪɴᴅ Tʜᴇ Fɪʟᴇ Yᴏᴜ Rᴇqᴜᴇꜱᴛᴇᴅ.\nMᴀᴋᴇ Sᴜʀᴇ Tʜᴇ Cᴏʀʀᴇᴄᴛ Sᴩᴇʟʟɪɴɢ.\nTʀʏ Sᴇᴀʀᴄʜɪɴɢ `{search}` ᴏɴ Gᴏᴏɢʟᴇ!"
 
 
 def res_txt(mention, search, botmention, count, crnt_pg, tot_pg):
