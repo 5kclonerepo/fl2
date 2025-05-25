@@ -157,7 +157,7 @@ async def filter_pm(bot, message, search=None):
             else:
                 nf_msgg = nf_txt(mention, search)
                 nf_kbb = nf_kb(search)
-                await message.reply_text(text=nf_msgg, reply_markup=nf_kbb)
+                nf_msg = await message.reply_text(text=nf_msgg, reply_markup=nf_kbb)
 
         if src:
             await src.delete()
@@ -200,6 +200,7 @@ async def pages(bot, query):
     me = bot.me
     username = me.username
     botmention = me.mention
+    nf_msg = None
     
     if org_user_id != user_id:
         await query.answer(text="Not your button")
@@ -249,7 +250,18 @@ async def pages(bot, query):
         else:
             nf_msgg = nf_txt(mention, search)
             nf_kbb = nf_kb(search)
-            await query.message.reply_text(text=nf_msgg, reply_markup=nf_kbb)
+            nf_msg = await query.message.reply_text(text=nf_msgg, reply_markup=nf_kbb)
+        if admin_settings["btn_del"]:
+            run_time = datetime.now() + timedelta(seconds=int(admin_settings["btn_del"]))
+            trigger = DateTrigger(run_date=run_time)
+            if nf_msg:
+                scheduler.add_job(
+                    del_message,
+                    trigger,
+                    args=[nf_msg.chat.id, nf_msg.id],
+                    max_instances=500000,
+                    misfire_grace_time=200,
+                )
 
 
 async def get_pm_result(search, page_no, user_id, username, chat_id, mention, botmention):
