@@ -109,7 +109,7 @@ def nf_kb(search):
 )
 
 
-START_MSG = "Hᴇʏ Tʜᴇʀᴇ {}, Mʏ Nᴀᴍᴇ ɪs **{}** .\n\n**𝙔𝙤𝙪𝙧 𝙢𝙖𝙜𝙞𝙘𝙖𝙡 𝙖𝙨𝙨𝙞𝙨𝙩𝙖𝙣𝙩 𝙛𝙤𝙧 𝙛𝙞𝙣𝙙𝙞𝙣𝙜 𝙛𝙞𝙡𝙚𝙨 𝙞𝙣 𝙖 𝙛𝙡𝙖𝙨𝙝❗\n\n𝙅𝙪𝙨𝙩 𝙩𝙚𝙡𝙡 𝙢𝙚 𝙬𝙝𝙖𝙩 𝙮𝙤𝙪❜𝙧𝙚 𝙡𝙤𝙤𝙠𝙞𝙣𝙜 𝙛𝙤𝙧 — 𝙢𝙤𝙫𝙞𝙚𝙨, 𝙨𝙚𝙧𝙞𝙚𝙨, 𝙙𝙤𝙘𝙪𝙢𝙚𝙣𝙩𝙨 — 𝙖𝙣𝙙 𝙥𝙤𝙤𝙛❗ 🎩✨ \n\n𝙄’𝙡𝙡 𝙛𝙚𝙩𝙘𝙝 𝙞𝙩 𝙛𝙤𝙧 𝙮𝙤𝙪 𝙞𝙣𝙨𝙩𝙖𝙣𝙩𝙡𝙮.\nJᴜsᴛ Aᴅᴅ Mᴇ Iɴ Yᴏᴜʀ Gʀᴏᴜᴘs,Oʀ Jᴜsᴛ Sᴇɴᴅ Mᴏᴠɪᴇ Nᴀᴍᴇ Hᴇʀᴇ, \n\n>  **🇷​​​​​🇪​​​​​🇦​​​​​🇩​​​​​🇾​​​​​ 🇹​​​​​🇴​​​​​ 🇦​​​​​🇸​​​​​🇸​​​​​🇮​​​​​🇸​​​​​🇹​​​​​ 24/7! 🕒** \n **Eɴᴊᴏʏ 😍**"
+START_MSG = "Hᴇʏ Tʜᴇʀᴇ {}, Mʏ Nᴀᴍᴇ ɪs **{}** .\n\n**Yᴏᴜʀ Mᴀɢɪᴄᴀʟ Assɪsᴛᴀɴᴛ Fᴏʀ Fɪɴᴅɪɴɢ Fɪʟᴇs Iɴ A Fʟᴀsʜ!**\n**Jᴜsᴛ Tᴇʟʟ Mᴇ Wʜᴀᴛ Yᴏᴜ'ʀᴇ Lᴏᴏᴋɪɴɢ Fᴏʀ — Mᴏᴠɪᴇs, Sᴇʀɪᴇs, Dᴏᴄᴜᴍᴇɴᴛs — Aɴᴅ Pᴏᴏғ! 🎩✨ I’ʟʟ Fᴇᴛᴄʜ Iᴛ Fᴏʀ Yᴏᴜ Iɴsᴛᴀɴᴛʟʏ...**\n**Jᴜsᴛ Aᴅᴅ Mᴇ Iɴ Yᴏᴜʀ Gʀᴏᴜᴘs,Oʀ Jᴜsᴛ Sᴇɴᴅ Mᴏᴠɪᴇ Nᴀᴍᴇ Hᴇʀᴇ, **\n\n>  **🇷​​​​​🇪​​​​​🇦​​​​​🇩​​​​​🇾​​​​​ 🇹​​​​​🇴​​​​​ 🇦​​​​​🇸​​​​​🇸​​​​​🇮​​​​​🇸​​​​​🇹​​​​​ 24/7! 🕒**"
 
 
 HELP_MSG = """
@@ -237,7 +237,7 @@ def nf_txt(mention, search):
 
 
 def res_txt(mention, search, botmention, count, crnt_pg, tot_pg):
-    return f"🎪 **Tɪᴛʟᴇ-Nᴀᴍᴇ** {search}\n\n┏🤴 **Asᴋᴇᴅ Bʏ** : {mention}\n┣⚡️ **Cᴏ-Pᴏᴡᴇʀᴇᴅ Bʏ** : {botmention} \n┗🍁 **Cʜᴀɴɴᴇʟ** : [💥Cɪɴᴇᴍᴀᴛʜᴀᴛᴛᴀᴋᴀᴍ_Aʀᴇɴᴀ💥](https://t.me/CT_Arena)\n\n★ 𝘼𝙛𝙩𝙚𝙧 2 𝙈𝙞𝙣𝙪𝙩𝙚𝙨 𝙏𝙝𝙚𝙨𝙚 𝘽𝙪𝙩𝙩𝙤𝙣𝙨 𝙒𝙞𝙡𝙡 𝘽𝙚 𝘼𝙪𝙩𝙤𝙢𝙖𝙩𝙞𝙘𝙖𝙡𝙡𝙮 𝘿𝙚𝙡𝙚𝙩𝙚𝙙 ★\n\n┏[🛞Mᴀɪɴ Gʀᴏᴜᴘ🛞](https://t.me/Cinemathattakam_group) \n┗[🛞Gʀᴏᴜᴘ 2🛞](https://t.me/Cinemathattakam_group1)\n\n> ┏**Sᴇᴀʀᴄʜᴇᴅ Fɪʟᴇ** : {search} \n> ┣**Tᴏᴛᴀʟ Rᴇsᴜʟᴛs** : {count} \n> ┗**Pᴀɢᴇs** {crnt_pg}/{tot_pg}"
+    return f"🎪 **Tɪᴛʟᴇ-Nᴀᴍᴇ** {search}\n**Cʜᴀɴɴᴇʟ** : [💥Cɪɴᴇᴍᴀᴛʜᴀᴛᴛᴀᴋᴀᴍ_Aʀᴇɴᴀ💥](https://t.me/CT_Arena)\n★ Aғᴛᴇʀ 2 Mɪɴᴜᴛᴇs Yᴏᴜʀ Bᴜᴛᴛᴏɴs Wɪʟʟ Bᴇ Aᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ Dᴇʟᴇᴛᴇᴅ ★\n┏[🛞Mᴀɪɴ Gʀᴏᴜᴘ🛞](https://t.me/Cinemathattakam_group) \n┗[🛞Gʀᴏᴜᴘ 2🛞](https://t.me/Cinemathattakam_group1)\n\n> ┏**Tᴏᴛᴀʟ Rᴇsᴜʟᴛs** : {count} \n> ┗**Pᴀɢᴇs** {crnt_pg}/{tot_pg}"
 
 
 REMOVE_WORDS = [
