@@ -96,12 +96,13 @@ HELP_BK_KB = InlineKeyboardMarkup(
 )
 
 
-def nf_kb(term):
+def nf_kb(search):
+    search = search.replace(" ", "+")
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                "🔍 𝗦𝗲𝗮𝗿𝗰𝗵 𝗧𝗵𝗲 𝗙𝗶𝗹𝗲 𝗡𝗮𝗺𝗲 𝗙𝗿𝗼𝗺 𝗚𝗼𝗼𝗴𝗹𝗲 🔎", url=f"https://www.google.com/search?q={term}"
+                "🔍 𝗦𝗲𝗮𝗿𝗰𝗵 𝗧𝗵𝗲 𝗙𝗶𝗹𝗲 𝗡𝗮𝗺𝗲 𝗙𝗿𝗼𝗺 𝗚𝗼𝗼𝗴𝗹𝗲 🔎", url=f"https://www.google.com/search?q={search}"
             ),
         ]
     ]
