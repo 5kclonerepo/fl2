@@ -232,12 +232,12 @@ UTIL_HLP_MSG = """
 """
 
 
-def nf_txt(mention, search):
+def nf_txt(mention, search): 
     return f"𝗛ᴇʏ **{mention}**,\n>✧ **Sᴏʀʀʏ, I Cᴏᴜᴅɴ'ᴛ Fɪɴᴅ Tʜᴀᴛ Mᴏᴠɪᴇ Iɴ Mʏ Dᴀᴛᴀʙᴀsᴇ 🔍🙇.**\n>✧ **Mᴀʏʙᴇ Tʜᴀᴛ Mᴏᴠɪᴇ's OTT Nᴏᴛ Yᴇᴛ Rᴇʟᴇᴀsᴇᴅ,Oʀ Tʜᴇ Sᴘᴇʟʟɪɴɢ Yᴏᴜ Sᴇɴᴅ Is Wʀᴏɴɢ ❌.**\n>✧ **Pʟᴇᴀsᴇ Dᴏᴜʙʟᴇ ᴄʜᴇᴄᴋ Yᴏᴜʀ Sᴘᴇʟʟɪɴɢ ‼️.**\n>✧ ** Tʀʏ Sᴇᴀʀᴄʜɪɴɢ  `{search}` ᴏɴ Gᴏᴏɢʟᴇ!**"
 
 
 def res_txt(mention, search, botmention, count, crnt_pg, tot_pg):
-    return f"🎪 ᴛɪᴛɪʟᴇ {search}\n\n┏ 🤴 ᴀsᴋᴇᴅʙʏ : {mention}\n┣⚡️ ᴘᴏᴡᴇʀᴇᴅ ʙʏ : {botmention} 🐻\n┗🍁 ᴄʜᴀɴɴᴇʟ : [Cinemathattakam](https://t.me/CT_Arena)\n\nᴀꜰᴛᴇʀ 10 ᴍɪɴᴜᴛᴇꜱ ᴛʜɪꜱ ᴍᴇꜱꜱᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ᴅᴇʟᴇᴛᴇᴅ\n\n★ ᴘᴏᴡᴇʀᴇᴅ ʙʏ : [Cinemathattakam](https://t.me/CT_Arena)\n\n>Sᴇᴀʀᴄʜᴇᴅ Fɪʟᴇ : {search} | Tᴏᴛᴀʟ Rᴇsᴜʟᴛs : {count}\n>ᴘᴀɢᴇ {crnt_pg}/{tot_pg}"
+    return f"🎪 **Tɪᴛʟᴇ-Nᴀᴍᴇ** {search}\n\n┏🤴 **Asᴋᴇᴅ Bʏ** : {mention}\n┣⚡️ **Cᴏ-Pᴏᴡᴇʀᴇᴅ Bʏ** : {botmention} \n┗🍁 **Cʜᴀɴɴᴇʟ** : [💥Cɪɴᴇᴍᴀᴛʜᴀᴛᴛᴀᴋᴀᴍ_Aʀᴇɴᴀ💥](https://t.me/CT_Arena)\n\n★ 𝘼𝙛𝙩𝙚𝙧 2 𝙈𝙞𝙣𝙪𝙩𝙚𝙨 𝙏𝙝𝙚𝙨𝙚 𝘽𝙪𝙩𝙩𝙤𝙣𝙨 𝙒𝙞𝙡𝙡 𝘽𝙚 𝘼𝙪𝙩𝙤𝙢𝙖𝙩𝙞𝙘𝙖𝙡𝙡𝙮 𝘿𝙚𝙡𝙚𝙩𝙚𝙙 ★\n\n★ Pᴏᴡᴇʀᴇᴅ Bʏ : ┏[🛞Mᴀɪɴ Gʀᴏᴜᴘ🛞](https://t.me/Cinemathattakam_group) \n┗[🛞Gʀᴏᴜᴘ 2🛞](https://t.me/Cinemathattakam_group1)\n\n> **Sᴇᴀʀᴄʜᴇᴅ Fɪʟᴇ** : {search} \n\n> **Tᴏᴛᴀʟ Rᴇsᴜʟᴛs** : {count} \n\n> **Pᴀɢᴇs** {crnt_pg}/{tot_pg}"
 
 
 REMOVE_WORDS = [
