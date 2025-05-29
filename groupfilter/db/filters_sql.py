@@ -65,29 +65,31 @@ def session_scope():
         SESSION.close()
 
 
-async def add_filter(filters, message, buttons=None, media_type=None, file_id=None):
+async def add_filter(filters, message=None, buttons=None, media_type=None, file_id=None):
     with INSERTION_LOCK:
         try:
             with session_scope() as session:
-                fltr = (
-                    session.query(Filters).filter(Filters.filters.ilike(filters)).one()
+                fltr = session.query(Filters).filter(Filters.filters.ilike(filters)).one_or_none()
+                if fltr:
+                    return False
+        except Exception as e:
+            LOGGER.error("Database error while checking filter: %s", str(e))
+            return False
+
+        try:
+            with session_scope() as session:
+                fltr = Filters(
+                    filters=filters,
+                    message=message,
+                    buttons=buttons,
+                    media_type=media_type,
+                    file_id=file_id,
                 )
-                return False
-        except NoResultFound:
-            try:
-                with session_scope() as session:
-                    fltr = Filters(
-                        filters=filters,
-                        message=message,
-                        buttons=buttons,
-                        media_type=media_type,
-                        file_id=file_id,
-                    )
-                    session.add(fltr)
-                    return True
-            except Exception as e:
-                LOGGER.error("Error adding filter: %s", str(e))
-                return False
+                session.add(fltr)
+                return True
+        except Exception as e:
+            LOGGER.error("Error adding filter: %s", str(e))
+            return False
 
 
 async def is_filter(filters):
