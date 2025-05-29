@@ -649,7 +649,7 @@ async def check_inline_fsub(bot, query, force_sub, link, request, user_id, s_no)
         if request:
             user_det = await is_req_user(int(user_id), int(force_sub))
             if user_det:
-                if not user_det.fileid:
+                if not user_det["fileid"]:
                     return True
             sw_param = f"fs_req_{s_no}"
         else:
