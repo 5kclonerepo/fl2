@@ -501,6 +501,7 @@ async def get_files(bot, query):
 async def send_file(admin_settings, bot, query, user_id, file_id):
     global DELIVERY
     usr_msg = None
+    mention = query.from_user.mention(style=ParseMode.MARKDOWN)
     filedetails = await get_file_details(file_id)
     f_caption = ""
     for files in filedetails:
@@ -512,6 +513,7 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
         else:
             f_caption = f"{files['file_name']}"
 
+    
     if admin_settings["caption_uname"]:
         f_caption = f_caption + "\n\n" + admin_settings["caption_uname"]
 
@@ -521,7 +523,9 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
         f_caption = f_caption.replace("{caption}", caption)
     if "{file_size}" in f_caption:
         f_caption = f_caption.replace("{file_size}", file_size)
-        
+    if "{mention}" in f_caption:Add commentMore actions 
+        f_caption = f_caption.replace("{mention}", mention)
+    
 
     if isinstance(query, CallbackQuery):
         mesg = query.message
