@@ -413,6 +413,7 @@ async def send_pm_file(admin_settings, bot, query, user_id, file_id, cbq):
     filedetails = await get_file_details(file_id)
     f_caption = ""
     usr_msg = None
+    mention = query.from_user.mention(style=ParseMode.MARKDOWN)
     for files in filedetails:
         caption = files["caption"]
         file_name = files["file_name"]
@@ -431,6 +432,8 @@ async def send_pm_file(admin_settings, bot, query, user_id, file_id, cbq):
         f_caption = f_caption.replace("{caption}", caption)
     if "{file_size}" in f_caption:
         f_caption = f_caption.replace("{file_size}", file_size)
+    if "{mention}" in f_caption:Add commentMore actions
+        f_caption = f_caption.replace("{mention}", mention)
 
     info = None
     if admin_settings["info_msg"] and admin_settings["info_img"]:
