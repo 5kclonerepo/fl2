@@ -196,6 +196,7 @@ DEL_HLP_MSG = """
 >__Delete files from the database or configure auto-delete settings for files and button messages in groups.__
 
 ‣ /delete - __Reply to a file to delete it from database__
+‣ /delmulti - __Delete multiple files from database with name__ - `/delmulti name`
 ‣ /autodelete - __Set file auto delete time in seconds__
 ‣ /buttondel - __Set button message in groups auto delete time in seconds__
 """
