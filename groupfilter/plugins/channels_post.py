@@ -177,12 +177,15 @@ async def preview_movie_details(bot, query):
     genres = movie_details.get("genres", "N/A")
     year = movie_details.get("year", "N/A")
     url = movie_details.get("url", "N/A")
+    rating = movie_details.get("rating", "N/A")
+
 
     preview_text = (
         f"✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})\n\n"
         f"🎙️ Audio: {textchanger(selected_languages, selected_font)}\n\n"
         f"📽️ Genre: {textchanger(genres, selected_font)}\n\n"
-        f"⭐ [{textchanger('IMDB Info')}]({url})"
+        f"⭐ [{textchanger('IMDB Info', selected_font)}]({url}) | "
+        f"{textchanger('Rating:', selected_font)} {textchanger(str(rating), selected_font)}"
     )
     confirm_markup = InlineKeyboardMarkup(
         [
@@ -215,7 +218,7 @@ async def preview_movie_details(bot, query):
 async def post_to_channels(bot, query):
     action, file_name = query.data.split("_")[1], query.data.split("_")[2]
     if action == "yes":
-        await query.answer("Sending to channels...")
+        await query.answer("✎ Pᴏsᴛɪɴɢ Iᴛ Oɴ Tʜᴇ Cʜᴀɴɴᴇʟ...")
         movie_details = await get_poster(file_name)
         if not movie_details:
             return await query.message.reply_text(
@@ -258,13 +261,13 @@ async def post_to_channels(bot, query):
                 )
                 LOGGER.error(f"Error posting to channel {channel_id}: {str(e)}")
         await query.message.edit_text(
-            "✅ Movie details successfully posted to channels."
+            "✅ Mᴏᴠɪᴇ ᴅᴇᴛᴀɪʟs sᴜᴄᴄᴇssғᴜʟʟʏ ᴘᴏsᴛᴇᴅ ᴛᴏ ᴄʜᴀɴɴᴇʟs..."
         )
         temp.clear()
     elif action == "no":
         await query.answer("Cancelling...")
         await query.message.edit_text(
-            "❌ Movie details will not be posted to channels."
+            "❌ Mᴏᴠɪᴇ ᴅᴇᴛᴀɪʟs ᴡɪʟʟ ᴄᴀɴɴᴏᴛ ʙᴇ ᴘᴏsᴛᴇᴅ ᴛᴏ ᴄʜᴀɴɴᴇʟs..."
         )
         temp.clear()
 
