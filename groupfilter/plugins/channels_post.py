@@ -1,11 +1,7 @@
 import re
 from imdb import Cinemagoer
 from pyrogram import Client, filters, enums
-from pyrogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    LinkPreviewOptions,
-)
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from groupfilter import (
     LOGGER,
     ADMINS,
@@ -26,34 +22,16 @@ LANGUAGES = {
     "jap": "Japanese",
     "multi": "Multi-Language",
 }
+FONT = ["𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿"]
 
-FONT_TYPES = {
-    "regular": "Regular Font",
-    "mono": "𝙼𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎 𝙵𝚘𝚗𝚝",
-    "smallcaps": "Sᴍᴀʟʟ Cᴀᴘꜱ F𝚘𝚗𝚝",
-}
-
-FONT_REGULAR = ["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"]
-FONT_MONO = ["𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿"]
-FONT_SMALLCAPS = ["ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀsᴛᴜᴠᴡxʏᴢABCDEFGHIJKLMNOPQRSTUVWXYZ𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿"]
-
-
-def textchanger(text, font_type="regular"):
+def textchanger(text):
     if not text:
         return text
     regular_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-    if font_type == "mono":
-        font_chars = "".join(FONT_MONO)
-    elif font_type == "smallcaps":
-        font_chars = "".join(FONT_SMALLCAPS)
-    else:  # regular
-        font_chars = "".join(FONT_REGULAR)
-
+    font_chars = "".join(FONT)
     translation_table = str.maketrans(regular_chars, font_chars)
     converted_text = text.translate(translation_table)
     return converted_text
-
 
 temp = {}
 imdb = Cinemagoer()
@@ -67,7 +45,7 @@ async def channelpost(bot, message):
         query = message.text.split(" ", 1)
         if len(query) < 2:
             return await message.reply_text(
-                "**Usage:** /channelpost movie_name\n\nExample: /channelpost Money Heist"
+                "<b>Usage:</b> /channelpost movie_name\n\nExample: /channelpost Money Heist"
             )
         file_name = query[1].strip()
         movie_details = await get_poster(file_name)
@@ -116,11 +94,7 @@ async def language_selection(bot, query):
             ]
         )
     language_buttons.append(
-        [
-            InlineKeyboardButton(
-                "Next: Choose Font ➡️", callback_data=f"fontsel_{file_name}"
-            )
-        ]
+        [InlineKeyboardButton("Proceed ➡️", callback_data=f"proceed_{file_name}")]
     )
     language_markup = InlineKeyboardMarkup(language_buttons)
     await query.message.edit_text(
@@ -129,40 +103,7 @@ async def language_selection(bot, query):
     await query.answer()
 
 
-@Client.on_callback_query(filters.regex(r"^fontsel_"))
-async def font_selection(bot, query):
-    await query.answer()
-    _, file_name = query.data.split("_")
-
-    if "selected_languages" not in temp or not temp["selected_languages"]:
-        return await query.message.edit_text(
-            "❌ Please select at least one language first."
-        )
-
-    font_buttons = []
-    for code, font_name in FONT_TYPES.items():
-        font_buttons.append(
-            [InlineKeyboardButton(font_name, callback_data=f"font_{code}_{file_name}")]
-        )
-
-    font_markup = InlineKeyboardMarkup(font_buttons)
-    await query.message.edit_text(
-        "Select the font style for the movie details:", reply_markup=font_markup
-    )
-
-
-@Client.on_callback_query(filters.regex(r"^font_"))
-async def font_choice(bot, query):
-    await query.answer()
-    _, font_code, file_name = query.data.split("_")
-
-    if font_code in FONT_TYPES:
-        temp["selected_font"] = font_code
-        await preview_movie_details(bot, query)
-    else:
-        await query.answer("Invalid font selection.", show_alert=True)
-
-
+@Client.on_callback_query(filters.regex(r"^proceed_"))
 async def preview_movie_details(bot, query):
     await query.answer("Please confirm...")
     movie_details = temp["current_movie"]["details"]
@@ -170,43 +111,23 @@ async def preview_movie_details(bot, query):
     selected_languages = (
         ", ".join(temp["selected_languages"]) if "selected_languages" in temp else "N/A"
     )
-    selected_font = temp.get("selected_font", "regular")
-
     movie_title = movie_details.get("title", "N/A")
     rating = movie_details.get("rating", "N/A")
     genres = movie_details.get("genres", "N/A")
     year = movie_details.get("year", "N/A")
-    url = movie_details.get("url", "N/A")
-
     preview_text = (
-        f"✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})\n\n"
-        f"🎙️ Audio: {textchanger(selected_languages, selected_font)}\n\n"
-        f"📽️ Genre: {textchanger(genres, selected_font)}\n\n"
+        f"✅ {textchanger(movie_title)} {textchanger(str(year))}\n\n"
+        f"🎙 {textchanger(selected_languages)}\n\n"
+        f"📽 Genre: {textchanger(genres)}"
     )
     confirm_markup = InlineKeyboardMarkup(
         [
-            [
-                InlineKeyboardButton(
-                    "✅ Yes, Post", callback_data=f"post_yes_{file_name}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "❌ No, Cancel", callback_data=f"post_no_{file_name}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "🔙 Back to Font Selection", callback_data=f"fontsel_{file_name}"
-                )
-            ],
+            [InlineKeyboardButton("✅ Yes, Post", callback_data=f"post_yes_{file_name}")],
+            [InlineKeyboardButton("❌ No, Cancel", callback_data=f"post_no_{file_name}")],
         ]
     )
     await query.message.edit_text(
-        preview_text,
-        reply_markup=confirm_markup,
-        parse_mode=enums.ParseMode.MARKDOWN,
-        link_preview_options=LinkPreviewOptions(is_disabled=True),
+        preview_text, reply_markup=confirm_markup, parse_mode=enums.ParseMode.HTML
     )
 
 
@@ -224,22 +145,19 @@ async def post_to_channels(bot, query):
         rating = movie_details.get("rating", "N/A")
         genres = movie_details.get("genres", "N/A")
         year = movie_details.get("year", "N/A")
-        url = movie_details.get("url", "N/A")
         selected_languages = (
             ", ".join(temp["selected_languages"])
             if "selected_languages" in temp
             else "N/A"
         )
-        selected_font = temp.get("selected_font", "regular")
-
         custom_link = f"https://t.me/{bot.me.username}?start=search_{file_name.replace(' ', '_').lower()}"
         reply_markup = InlineKeyboardMarkup(
             [[InlineKeyboardButton("Get the File 🔎", url=custom_link)]]
         )
         caption = (
-            f"**✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})**\n\n"
-            f"**🎙️ Audio: {textchanger(selected_languages, selected_font)}**\n\n"
-            f"**📽️ Genres: {textchanger(genres, selected_font)}**\n\n"
+            f"<b>✅ {textchanger(movie_title)} ({textchanger(str(year))})</b>\n\n"
+            f"<b>🎙️ Audio: {textchanger(selected_languages)}</b>\n\n"
+            f"<b>📽️ Genres: {textchanger(genres)}</b>"
         )
         for channel_id in POST_CHANNELS:
             try:
@@ -247,24 +165,17 @@ async def post_to_channels(bot, query):
                     chat_id=channel_id,
                     text=caption,
                     reply_markup=reply_markup,
-                    parse_mode=enums.ParseMode.MARKDOWN,
-                    link_preview_options=LinkPreviewOptions(is_disabled=True),
+                    parse_mode=enums.ParseMode.HTML,
                 )
             except Exception as e:
                 await query.message.reply_text(
                     f"Error posting to channel {channel_id}: {str(e)}"
                 )
                 LOGGER.error(f"Error posting to channel {channel_id}: {str(e)}")
-        await query.message.edit_text(
-            "✅ Movie details successfully posted to channels."
-        )
-        temp.clear()
+        await query.message.edit_text("✅ Movie details successfully posted to channels.")
     elif action == "no":
         await query.answer("Cancelling...")
-        await query.message.edit_text(
-            "❌ Movie details will not be posted to channels."
-        )
-        temp.clear()
+        await query.message.edit_text("❌ Movie details will not be posted to channels.")
 
 
 async def get_poster(query, bulk=False, id=False, file=None):
