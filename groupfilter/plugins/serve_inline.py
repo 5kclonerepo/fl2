@@ -66,11 +66,11 @@ async def answer(bot, query):
     f_caption = ""
     for file in files:
         caption = file["caption"]
-        file_name = file["file_name"]Add commentMore actions
+        file_name = file["file_name"]
         file_size = get_size(file["file_size"])
         if admin_settings["custom_caption"]:
             f_caption = admin_settings["custom_caption"]
-        else:Add commentMore actions
+        else:
             f_caption = f"{file['file_name']}"
             
         if "{file_name}" in f_caption:
