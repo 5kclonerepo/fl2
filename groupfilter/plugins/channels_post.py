@@ -182,7 +182,7 @@ async def preview_movie_details(bot, query):
         f"✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})\n\n"
         f"🎙️ Audio: {textchanger(selected_languages, selected_font)}\n\n"
         f"📽️ Genre: {textchanger(genres, selected_font)}\n\n"
-        f"**⭐ [{textchanger("IMDB Info")}]({url})**"
+        f'⭐ <a href="{url}">{textchanger("IMDB Info")}</a>'
     )
     confirm_markup = InlineKeyboardMarkup(
         [
