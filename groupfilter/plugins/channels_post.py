@@ -241,7 +241,7 @@ async def post_to_channels(bot, query):
             [
                 [InlineKeyboardButton("Gᴇᴛ Tʜᴇ Fɪʟᴇ... 🔎", url=custom_link)],
                 [
-                    InlineKeyboardButton("👨‍💻 Uᴘᴅᴀᴛᴇ Cʜᴀɴɴᴇʟ", url="https://ct_updatez"),
+                    InlineKeyboardButton("👨‍💻 Uᴘᴅᴀᴛᴇ Cʜᴀɴɴᴇʟ", url="https://t.me/Ct_updatez"),
                     InlineKeyboardButton("📢 Mᴀɪɴ Cʜᴀɴɴᴇʟ", url="https://t.me/CT_Arena")
                 ]
             ]
