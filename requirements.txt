@@ -17,3 +17,4 @@ tzlocal
 uvloop
 redis
 bs4
+cinemagoer
