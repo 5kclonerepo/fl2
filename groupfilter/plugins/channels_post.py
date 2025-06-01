@@ -240,7 +240,6 @@ async def post_to_channels(bot, query):
             f"**✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})**\n\n"
             f"**🎙️ Audio: {textchanger(selected_languages, selected_font)}**\n\n"
             f"**📽️ Genres: {textchanger(genres, selected_font)}**\n\n"
-            f"**⭐ [{textchanger("IMDB Info")}]({url})**"
         )
         for channel_id in POST_CHANNELS:
             try:
