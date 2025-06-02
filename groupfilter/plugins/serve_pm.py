@@ -314,7 +314,7 @@ async def get_pm_result(search, page_no, user_id, username, chat_id, mention, bo
                     result += "\n" + AD_KB
             else:
                 tr_f_name = trim_button_text(file_name)
-                filename = f"[{file_size}] {tr_f_name}"
+                filename = f"📂 {file_size} ➽ {tr_f_name}"
                 btn_kb = InlineKeyboardButton(
                     text=filename,
                     callback_data=f"pmfile#{file_id}",
