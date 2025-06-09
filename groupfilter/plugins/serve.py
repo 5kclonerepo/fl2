@@ -719,7 +719,7 @@ async def send_file(admin_settings, bot, query, user_id, file_id):
                     max_instances=500000,
                     misfire_grace_time=100,
                 )
-            txt = "File has been deleted"
+            txt = "𝙔𝙤𝙪𝙧 𝙁𝙞𝙡𝙚 𝙃𝙖𝙨 𝘽𝙚𝙚𝙣 𝘿𝙚𝙡𝙚𝙩𝙚𝙙 𝘿𝙪𝙚 𝙏𝙤 𝘾𝙤𝙥𝙮𝙧𝙞𝙜𝙝𝙩 𝙄𝙨𝙨𝙪𝙚𝙨 ✅"
             scheduler.add_job(
                 del_message,
                 trigger,
@@ -779,7 +779,6 @@ async def del_message(chat_id: int, message_id: int, txt=None, delay_dur=None):
                 max_instances=500000,
                 misfire_grace_time=200,
             )
-            await app.send_message(chat_id=chat_id, text=txt)
     except Exception as e:
         LOGGER.warning(
             "Failed to delete message: %s : %s : %s", chat_id, message_id, str(e)
