@@ -259,7 +259,7 @@ def nf_txt(mention, search):
 
 
 def res_txt(mention, search, botmention, count, crnt_pg, tot_pg):
-    return f"🎪 **Tɪᴛʟᴇ-Nᴀᴍᴇ** {search}\n\n★ Aғᴛᴇʀ 2 Mɪɴᴜᴛᴇs Yᴏᴜʀ Bᴜᴛᴛᴏɴs Wɪʟʟ Bᴇ Aᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ Dᴇʟᴇᴛᴇᴅ ★\n\n**Cʜᴀɴɴᴇʟ** : [💥Cɪɴᴇᴍᴀᴛʜᴀᴛᴛᴀᴋᴀᴍ_Aʀᴇɴᴀ💥](https://t.me/CT_Arena)\n**Mᴀɪɴ Gʀᴏᴜᴘ**[🔰[CT] Cɪɴᴇᴍᴀᴛʜᴀᴛᴛᴀᴋᴀᴍ 🔰](https://t.me/Cinemathattakam_group) \n**Gʀᴏᴜᴘ 2**[🔰[CT] Cɪɴᴇᴍᴀᴛʜᴀᴛᴛᴀᴋᴀᴍ 🔰](https://t.me/Cinemathattakam_group1)\n\n> ┏**Tᴏᴛᴀʟ Rᴇsᴜʟᴛs** : {count} \n> ┗**Pᴀɢᴇs** {crnt_pg}/{tot_pg}"
+    return f"𝐇𝐞𝐲 𝐓𝐡𝐞𝐫𝐞 **{mention}** 𝐓𝐡𝐢𝐬 𝐈𝐬 𝐖𝐡𝐚𝐭 𝐈 𝐅𝐨𝐮𝐧𝐝 𝐅𝐨𝐫 𝐘𝐨𝐮𝐫 𝐐𝐮𝐞𝐫𝐲 📂\n\n**★ Aғᴛᴇʀ 1 Mɪɴᴜᴛᴇ Yᴏᴜʀ Bᴜᴛᴛᴏɴs Wɪʟʟ Bᴇ Aᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ Dᴇʟᴇᴛᴇᴅ ★**\n\n**Jᴏɪɴ Oᴜʀ Gʀᴏᴜᴘs** : [💥Cɪɴᴇᴍᴀᴛʜᴀᴛᴛᴀᴋᴀᴍ 💥](https://t.me/addlist/euBsJ9YAMKYxMmRl)\n\n> ┏**Tᴏᴛᴀʟ Rᴇsᴜʟᴛs** : {count} \n> ┗**Pᴀɢᴇs** {crnt_pg}/{tot_pg}"
 
 
 REMOVE_WORDS = [
