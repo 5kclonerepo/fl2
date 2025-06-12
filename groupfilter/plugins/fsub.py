@@ -567,8 +567,8 @@ async def check_fsub(
                 parse_mode=ParseMode.MARKDOWN,
                 quote=True,
             )
-            elif admin_settings and admin_settings["fsub_img"] and not admin_settings["fsub_msg"]:
-                sub_msg = await msg.reply_photo(
+        elif admin_settings and admin_settings["fsub_img"] and not admin_settings["fsub_msg"]:
+            sub_msg = await msg.reply_photo(
                     photo=fsub_img,
                     reply_markup=kb,
                     parse_mode=ParseMode.MARKDOWN,
