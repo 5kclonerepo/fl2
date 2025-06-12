@@ -530,7 +530,7 @@ async def check_fsub(
 
     if admin_settings:
         txt = admin_settings["fsub_msg"] or "**Please join below channel to get file!**"
-        fsub_img = getattr(admin_settings, "fsub_img", None)
+        fsub_img = admin_settings["fsub_img"]
 
     try:
         user = await bot.get_chat_member(int(force_sub), user_id)
@@ -560,12 +560,19 @@ async def check_fsub(
                 parse_mode=ParseMode.MARKDOWN,
                 quote=True,
             )
-        elif admin_settings and admin_settings["fsub_msg"]:
+        elif admin_settings and admin_settings["fsub_msg"] and not admin_settings["fsub_img"]:
             sub_msg = await msg.reply_text(
                 text=txt,
                 reply_markup=kb,
                 parse_mode=ParseMode.MARKDOWN,
                 quote=True,
+            )
+            elif admin_settings and admin_settings["fsub_img"] and not admin_settings["fsub_msg"]:
+                sub_msg = await msg.reply_photo(
+                    photo=fsub_img,
+                    reply_markup=kb,
+                    parse_mode=ParseMode.MARKDOWN,
+                    quote=True,
             )
         else:
             sub_msg = await msg.reply_text(txt, reply_markup=kb, quote=True)
@@ -738,9 +745,16 @@ async def get_inline_fsub(bot, update):
                         parse_mode=ParseMode.MARKDOWN,
                         quote=True,
                     )
-                elif admin_settings and admin_settings["fsub_msg"]:
+                elif admin_settings and admin_settings["fsub_msg"] and not admin_settings["fsub_img"]:
                     sub_msg = await msg.reply_text(
                         text=txt,
+                        reply_markup=kb,
+                        parse_mode=ParseMode.MARKDOWN,
+                        quote=True,
+                    )
+                elif admin_settings and admin_settings["fsub_img"] and not admin_settings["fsub_msg"]:
+                    sub_msg = await msg.reply_photo(
+                        photo=fsub_img,
                         reply_markup=kb,
                         parse_mode=ParseMode.MARKDOWN,
                         quote=True,
