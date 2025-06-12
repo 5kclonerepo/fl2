@@ -158,13 +158,18 @@ async def font_choice(bot, query):
 
     if font_code in FONT_TYPES:
         temp["selected_font"] = font_code
-        await preview_movie_details(bot, query)
+        preview_text, confirm_markup = await preview_movie_details(bot, query)
+        await query.message.edit_text(
+            preview_text,
+            reply_markup=confirm_markup,
+            parse_mode=enums.ParseMode.MARKDOWN,
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
+        )
     else:
         await query.answer("Invalid font selection.", show_alert=True)
 
 
-async def preview_movie_details(bot, query):
-    await query.answer("Please confirm...")
+async def preview_movie_details(bot, query=None, for_post=False, custom_link=None):
     movie_details = temp["current_movie"]["details"]
     file_name = temp["current_movie"]["name"]
     selected_languages = (
@@ -177,41 +182,44 @@ async def preview_movie_details(bot, query):
     genres = movie_details.get("genres", "N/A")
     year = movie_details.get("year", "N/A")
     url = movie_details.get("url", "N/A")
-    rating = movie_details.get("rating", "N/A")
 
-
-    preview_text = (
+    formatted_text = (
         f"✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})\n\n"
         f"🎙️ Audio: {textchanger(selected_languages, selected_font)}\n\n"
         f"📽️ Genre: {textchanger(genres, selected_font)}\n\n"
         f"⭐ [{textchanger('IMDB Info', selected_font)}]({url}) | "
         f"**{textchanger('Rating:', selected_font)} {textchanger(str(rating), selected_font)}**"
     )
-    confirm_markup = InlineKeyboardMarkup(
-        [
+    if for_post:
+        formatted_text = (
+            f"**✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})**\n\n"
+            f"**🎙️ Audio: {textchanger(selected_languages, selected_font)}**\n\n"
+            f"**📽️ Genres: {textchanger(genres, selected_font)}**\n\n"
+            f"**⭐ [{textchanger('IMDB Info', selected_font)}]({url})** | "
+            f"**{textchanger('Rating:', selected_font)} {textchanger(str(rating), selected_font)}**"
+        )
+        return formatted_text
+    else:
+        confirm_markup = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton(
-                    "✅ Yes, Post", callback_data=f"post_yes_{file_name}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "❌ No, Cancel", callback_data=f"post_no_{file_name}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "🔙 Back to Font Selection", callback_data=f"fontsel_{file_name}"
-                )
-            ],
-        ]
-    )
-    await query.message.edit_text(
-        preview_text,
-        reply_markup=confirm_markup,
-        parse_mode=enums.ParseMode.MARKDOWN,
-        link_preview_options=LinkPreviewOptions(is_disabled=True),
-    )
+                [
+                    InlineKeyboardButton(
+                        "✅ Yes, Post", callback_data=f"post_yes_{file_name}"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "❌ No, Cancel", callback_data=f"post_no_{file_name}"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "🔙 Back to Font Selection", callback_data=f"fontsel_{file_name}"
+                    )
+                ],
+            ]
+        )
+        return formatted_text, confirm_markup
 
 
 @Client.on_callback_query(filters.regex(r"^post_(yes|no)_"))
@@ -219,20 +227,6 @@ async def post_to_channels(bot, query):
     action, file_name = query.data.split("_")[1], query.data.split("_")[2]
     if action == "yes":
         await query.answer("✎ Pᴏsᴛɪɴɢ Iᴛ Oɴ Tʜᴇ Cʜᴀɴɴᴇʟ...")
-        
-        movie_details = temp["current_movie"]["details"]
-        file_name = temp["current_movie"]["name"]
-        selected_languages = (
-            ", ".join(temp["selected_languages"]) if "selected_languages" in temp else "N/A"
-        )
-        selected_font = temp.get("selected_font", "regular")
-        movie_title = movie_details.get("title", "N/A")
-        rating = movie_details.get("rating", "N/A")
-        genres = movie_details.get("genres", "N/A")
-        year = movie_details.get("year", "N/A")
-        url = movie_details.get("url", "N/A")
-
-        
         custom_link = f"https://t.me/{bot.me.username}?start=search_{file_name.replace(' ', '_').lower()}"
         reply_markup = InlineKeyboardMarkup(
             [
@@ -243,13 +237,7 @@ async def post_to_channels(bot, query):
                 ]
             ]
         )
-        caption = (
-            f"**✅ {textchanger(movie_title, selected_font)} ({textchanger(str(year), selected_font)})**\n\n"
-            f"**🎙️ Audio: {textchanger(selected_languages, selected_font)}**\n\n"
-            f"**📽️ Genres: {textchanger(genres, selected_font)}**\n\n"
-            f"**⭐ [{textchanger('IMDB Info')}]({url})**"
-            f"**{textchanger('Rating:', selected_font)} {textchanger(str(rating), selected_font)}**"
-        )
+        caption = await preview_movie_details(bot, for_post=True)
         for channel_id in POST_CHANNELS:
             try:
                 await bot.send_message(
