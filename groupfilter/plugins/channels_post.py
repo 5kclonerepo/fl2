@@ -225,7 +225,7 @@ async def post_to_channels(bot, query):
         selected_languages = (
             ", ".join(temp["selected_languages"]) if "selected_languages" in temp else "N/A"
         )
-        selected_font = temp.get("selected_font", "regular"))
+        selected_font = temp.get("selected_font", "regular")
         movie_title = movie_details.get("title", "N/A")
         rating = movie_details.get("rating", "N/A")
         genres = movie_details.get("genres", "N/A")
