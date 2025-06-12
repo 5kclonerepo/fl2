@@ -18,3 +18,4 @@ uvloop
 redis
 bs4
 cinemagoer
+requests
