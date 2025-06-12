@@ -219,23 +219,20 @@ async def post_to_channels(bot, query):
     action, file_name = query.data.split("_")[1], query.data.split("_")[2]
     if action == "yes":
         await query.answer("✎ Pᴏsᴛɪɴɢ Iᴛ Oɴ Tʜᴇ Cʜᴀɴɴᴇʟ...")
-        movie_details = await get_poster(file_name)
-        if not movie_details:
-            return await query.message.reply_text(
-                f"No results found for {file_name} on IMDB."
-            )
+        
+        movie_details = temp["current_movie"]["details"]
+        file_name = temp["current_movie"]["name"]
+        selected_languages = (
+            ", ".join(temp["selected_languages"]) if "selected_languages" in temp else "N/A"
+        )
+        selected_font = temp.get("selected_font", "regular"))
         movie_title = movie_details.get("title", "N/A")
         rating = movie_details.get("rating", "N/A")
         genres = movie_details.get("genres", "N/A")
         year = movie_details.get("year", "N/A")
         url = movie_details.get("url", "N/A")
-        selected_languages = (
-            ", ".join(temp["selected_languages"])
-            if "selected_languages" in temp
-            else "N/A"
-        )
-        selected_font = temp.get("selected_font", "regular")
 
+        
         custom_link = f"https://t.me/{bot.me.username}?start=search_{file_name.replace(' ', '_').lower()}"
         reply_markup = InlineKeyboardMarkup(
             [
