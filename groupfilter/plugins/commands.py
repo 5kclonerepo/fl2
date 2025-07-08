@@ -62,6 +62,13 @@ async def start(bot, update):
         #     reply_to_message_id=update.reply_to_message_id,
         #     reply_markup=get_start_kb(bot.me.username),
         # )
+
+        EFFECT_IDS = [
+    "5104841245755180586", 
+    "5107584321108051014", 
+    "5159385139981059251", 
+    "5046509860389126442"
+]
         strt_img = random.choice(START_IMG)
         await bot.send_photo(
             chat_id=update.chat.id,
@@ -69,6 +76,7 @@ async def start(bot, update):
             caption=start_msg,
             reply_to_message_id=update.reply_to_message_id,
             reply_markup=get_start_kb(bot.me.username),
+            message_effect_id=EFFECT_IDS,
         )
     elif len(update.command) == 2:
         try:
