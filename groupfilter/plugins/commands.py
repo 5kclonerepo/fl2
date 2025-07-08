@@ -64,10 +64,10 @@ async def start(bot, update):
         # )
 
         EFFECT_IDS = [
-    "5104841245755180586", 
-    "5107584321108051014", 
-    "5159385139981059251", 
-    "5046509860389126442"
+    5104841245755180586, 
+    5107584321108051014, 
+    5159385139981059251, 
+    5046509860389126442
 ]
         strt_img = random.choice(START_IMG)
         await bot.send_photo(
@@ -76,7 +76,7 @@ async def start(bot, update):
             caption=start_msg,
             reply_to_message_id=update.reply_to_message_id,
             reply_markup=get_start_kb(bot.me.username),
-            message_effect_id=random.choice(EFFECT_IDS),
+            message_effect_id=random.choice(EFFECT_IDS)
         )
     elif len(update.command) == 2:
         try:
