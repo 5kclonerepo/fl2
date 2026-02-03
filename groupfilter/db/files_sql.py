@@ -180,7 +180,7 @@ async def get_filter_results(query, page=1, per_page=10):
     if cached_result:
         return json.loads(cached_result)
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     result = await loop.run_in_executor(
         executor, fetch_filter_results_sync, query, page, per_page
     )
