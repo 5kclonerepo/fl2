@@ -45,7 +45,5 @@ async def main():
         await idle()
         LOGGER.info("%s - @%s - Stopped !!!", me.first_name, me.username)
 
-
-# uvloop.run(main())
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+if __name__ == "__main__":
+    asyncio.run(main())
