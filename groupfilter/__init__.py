@@ -43,7 +43,6 @@ POST_CHANNELS = [
 MAX_LIST_ELM = int(os.getenv("MAX_LIST_ELM", "0"))
 LONG_IMDB_DESCRIPTION = int(os.getenv("LONG_IMDB_DESCRIPTION", "0"))
 OMDB_API_KEY = os.getenv("OMDB_API_KEY", "")
-REPO_URL = os.environ.get("REPO_URL", "")
 
 
 try:
@@ -62,3 +61,4 @@ logging.config.fileConfig(fname="config.ini", disable_existing_loggers=False)
 LOGGER = logging.getLogger(__name__)
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
+
